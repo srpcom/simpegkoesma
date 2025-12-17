@@ -18,18 +18,11 @@
         .sidebar { 
             min-height: 100vh; width: 260px; background: var(--primary); color: white; 
             position: fixed; transition: all 0.3s; z-index: 1050; 
-            left: 0; /* Default visible on desktop */
         }
-        .sidebar.collapsed { left: -260px; } /* Class to hide on desktop */
-
         .sidebar .nav-link { color: rgba(255,255,255,0.8); margin: 5px 15px; border-radius: 8px; font-weight: 500; }
         .sidebar .nav-link:hover, .sidebar .nav-link.active { background: rgba(255,255,255,0.15); color: white; transform: translateX(5px); }
         .sidebar .nav-link i { width: 25px; }
-        
-        .main-content { 
-            margin-left: 260px; padding: 25px; transition: all 0.3s; 
-        }
-        .main-content.expanded { margin-left: 0; } /* Class to expand content on desktop */
+        .main-content { margin-left: 260px; padding: 25px; transition: all 0.3s; }
         
         /* Mobile Overlay */
         .sidebar-overlay {
@@ -39,16 +32,13 @@
         }
         .sidebar-overlay.active { display: block; }
 
-        /* Mobile Specifics */
         @media (max-width: 768px) {
-            .sidebar { left: -260px; } /* Default hidden on mobile */
-            .sidebar.active { left: 0; } /* Show when active */
-            .sidebar.collapsed { left: -260px; } /* Override collapsed logic */
+            .sidebar { margin-left: -260px; }
+            .sidebar.active { margin-left: 0; }
             .main-content { margin-left: 0; }
-            .main-content.expanded { margin-left: 0; }
         }
 
-        /* SweetAlert2 Customization */
+        /* --- SWEETALERT2 CUSTOMIZATION --- */
         .swal2-popup { font-size: 0.9rem !important; border-radius: 12px !important; padding: 1.5em !important; }
         .swal2-title { font-size: 1.4rem !important; font-weight: 700 !important; color: #333 !important; }
         .swal2-html-container { font-size: 0.95rem !important; color: #555 !important; text-align: left !important; }
@@ -124,7 +114,7 @@
                 <form onsubmit="handleRegister(event)" class="form-modern">
                     <div class="mb-3"><label class="form-label">NIK (Sesuai KTP)</label><input type="number" id="r-nik" class="form-control" placeholder="16 Digit NIK" required minlength="16"></div>
                     <div class="mb-3"><label class="form-label">Nama Lengkap</label><input type="text" id="r-nama" class="form-control" placeholder="Nama Lengkap Tanpa Gelar" required></div>
-                    <div class="mb-3"><label class="form-label">Email (Opsional / Gmail)</label><input type="email" id="r-email" class="form-control" placeholder="contoh@gmail.com"><div class="form-text text-muted" style="font-size: 0.8rem;">Gunakan Gmail jika ingin login dengan Google nanti.</div></div>
+                    <div class="mb-3"><label class="form-label">Email (Wajib / Gmail)</label><input type="email" id="r-email" class="form-control" placeholder="contoh@gmail.com" required><div class="form-text text-muted" style="font-size: 0.8rem;">Digunakan untuk login & reset password.</div></div>
                     <div class="mb-4"><label class="form-label">Buat Kata Sandi</label><input type="password" id="r-pass" class="form-control" placeholder="Min. 6 Karakter" required minlength="6"></div>
                     <button type="submit" class="btn-primary-modern" style="background: linear-gradient(to right, #198754, #157347);">Daftar Akun Baru</button>
                 </form>
@@ -166,8 +156,7 @@
 
         <!-- Content -->
         <div class="main-content" id="main-content">
-            <!-- Tombol Toggle Sidebar (Visible on Mobile & Desktop) -->
-            <button class="btn btn-primary mb-3" onclick="toggleSidebar()"><i class="fas fa-bars"></i> Menu</button>
+            <button class="btn btn-primary d-md-none mb-3" onclick="toggleSidebar()"><i class="fas fa-bars"></i> Menu</button>
             <div id="view-container"></div>
         </div>
     </div>
@@ -183,22 +172,12 @@
 
         function toggleLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
 
-        // [MODIFIED] Sidebar Toggle Logic (Works on Mobile & Desktop)
+        // [NEW] Sidebar Toggle Logic
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-            const mainContent = document.getElementById('main-content');
-            
-            // Cek apakah mode Desktop atau Mobile
-            if (window.innerWidth > 768) {
-                // Desktop: Toggle Collapse
-                sidebar.classList.toggle('collapsed');
-                mainContent.classList.toggle('expanded');
-            } else {
-                // Mobile: Toggle Overlay
-                sidebar.classList.toggle('active');
-                overlay.classList.toggle('active');
-            }
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
         }
 
         // [HELPER] FIX IMAGE URL
@@ -245,6 +224,7 @@
             const nama = document.getElementById('r-nama').value;
             const email = document.getElementById('r-email').value;
             const pass = document.getElementById('r-pass').value;
+            if (!email) { Swal.fire('Error', 'Email wajib diisi!', 'warning'); return; } // Validation Frontend
             if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(pass)) { Swal.fire('Password Lemah', 'Min 6 karakter (Huruf & Angka).', 'warning'); return; }
             toggleLoading(true);
             const res = await fetchGAS({ action: 'register', nik, nama, email, password: pass });
@@ -336,12 +316,10 @@
         }
 
         function navTo(page) {
-            // Auto close sidebar on mobile only
             if (window.innerWidth <= 768) {
                 document.getElementById('sidebar').classList.remove('active');
                 document.getElementById('sidebar-overlay').classList.remove('active');
             }
-
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
             const menu = document.querySelector(`[onclick="navTo('${page}')"]`);
             if(menu) menu.classList.add('active');
@@ -354,6 +332,7 @@
             else if (page === 'admin') renderAdminDashboardV2(container);
         }
 
+        // --- RENDERERS ---
         function renderProfil(container) {
             const p = appData.profil || {};
             const imgSrc = getImgUrl(p.Foto_Profil);
@@ -478,6 +457,7 @@
             if (formValues) saveData(tableName, formValues);
         }
 
+        // --- ADMIN FUNCTIONS ---
         function renderAdminDashboardV2(container) {
             container.innerHTML = `
                 <div class="card p-4">
@@ -645,50 +625,6 @@
             const res = await fetchGAS({ action: 'admin_bulk_verify', table: tId, ids });
             toggleLoading(false);
             if(res.status==='success') { Swal.fire('Sukses',res.message,'success'); loadAdminAntrean(); } else Swal.fire('Error',res.message,'error');
-        }
-
-        function renderTable(container, title, data, tableName) {
-            let rows = '';
-            if (data && data.length > 0) {
-                data.forEach((item, index) => {
-                    const badge = `<span class="status-badge-${item.Status_Verifikasi}">${item.Status_Verifikasi}</span>`;
-                    let info = '';
-                    if (tableName === 'tb_pangkat') info = `<b>${item.Pangkat}</b><br>SK: ${item.No_SK}`;
-                    else if (tableName === 'tb_jabatan') info = `<b>${item.Nama_Jabatan}</b><br>${item.Unit_Kerja}`;
-                    else if (tableName === 'tb_keluarga') info = `<b>${item.Nama}</b> (${item.Hubungan})`;
-                    else info = `<b>${item.Jenis_Kartu}</b><br>${item.No_Kartu}`;
-                    const btnFile = item.Link_File ? `<a href="${item.Link_File}" target="_blank" class="btn btn-sm btn-info me-1"><i class="fas fa-file"></i></a>` : '';
-                    rows += `<tr><td>${index+1}</td><td>${info}</td><td>${item.TMT||item.Tunjangan||'-'}</td><td>${badge}</td><td>${btnFile}<button onclick="deleteData('${tableName}', '${item.ID}')" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button></td></tr>`;
-                });
-            } else rows = '<tr><td colspan="5" class="text-center p-4">Belum ada data.</td></tr>';
-            container.innerHTML = `<div class="card p-4"><div class="d-flex justify-content-between mb-4"><h4 class="text-primary fw-bold">${title}</h4><button onclick="addData('${tableName}')" class="btn btn-primary"><i class="fas fa-plus"></i> Tambah</button></div><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>No</th><th>Detail</th><th>Ket</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
-        }
-
-        async function saveData(tableName, values, id = null) {
-            toggleLoading(true);
-            const payload = { action: 'save_data', table: tableName, values: values, nik: currentUser.nik };
-            if (id) payload.values.ID = id;
-            const res = await fetchGAS(payload);
-            if (res.status === 'success') {
-                const refresh = await fetchGAS({ action: 'get_data', nik: currentUser.nik });
-                if (refresh.status === 'success') appData = refresh.data;
-                toggleLoading(false);
-                Swal.fire('Berhasil', 'Data disimpan', 'success').then(() => { if(tableName === 'tb_profil') navTo('profil'); else navTo(tableName.split('_')[1]); });
-            } else { toggleLoading(false); Swal.fire('Error', res.message, 'error'); }
-        }
-
-        function deleteData(tableName, id) {
-            Swal.fire({ title: 'Hapus Data?', text: "Data hilang permanen!", icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Hapus' }).then(async (result) => {
-                if (result.isConfirmed) {
-                    toggleLoading(true);
-                    await fetchGAS({ action: 'delete_data', table: tableName, id: id });
-                    const refresh = await fetchGAS({ action: 'get_data', nik: currentUser.nik });
-                    appData = refresh.data;
-                    toggleLoading(false);
-                    Swal.fire('Terhapus', 'Berhasil', 'success');
-                    document.querySelector('.nav-link.active').click();
-                }
-            });
         }
 
         async function fetchGAS(payload) { const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); return await response.json(); }
