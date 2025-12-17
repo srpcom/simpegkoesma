@@ -126,7 +126,7 @@
     <!-- MAIN APP SECTION -->
     <div id="app-main" class="d-none">
         
-        <!-- Overlay -->
+        <!-- Overlay untuk Mobile -->
         <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
         <!-- Sidebar -->
@@ -137,7 +137,10 @@
                     <h6 class="fw-bold mb-0">SIMPEG RSUD</h6>
                     <small id="user-display-name" class="text-white-50">User</small>
                 </div>
-                <button class="btn btn-sm text-white d-md-none position-absolute top-0 end-0 m-3" onclick="toggleSidebar()"><i class="fas fa-times fa-lg"></i></button>
+                <!-- Tombol Close Sidebar (Hanya di Mobile) -->
+                <button class="btn btn-sm text-white d-md-none position-absolute top-0 end-0 m-3" onclick="toggleSidebar()">
+                    <i class="fas fa-times fa-lg"></i>
+                </button>
             </div>
             
             <ul class="nav flex-column mb-auto">
@@ -168,10 +171,36 @@
         let selectedIds = []; 
 
         function toggleLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('sidebar-overlay').classList.toggle('active'); }
-        function getImgUrl(url) { if (!url || url.length < 5) return 'https://via.placeholder.com/150'; if (url.includes('drive.google.com/file/d/')) { try { const id = url.split('/d/')[1].split('/')[0]; return `https://lh3.googleusercontent.com/d/${id}`; } catch(e) { return url; } } return url; }
-        function toBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); }); }
-        
+
+        // [NEW] Sidebar Toggle Logic
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        // [HELPER] FIX IMAGE URL
+        function getImgUrl(url) {
+            if (!url || url.length < 5) return 'https://via.placeholder.com/150';
+            if (url.includes('drive.google.com/file/d/')) {
+                try {
+                    const id = url.split('/d/')[1].split('/')[0];
+                    return `https://lh3.googleusercontent.com/d/${id}`;
+                } catch(e) { return url; }
+            }
+            return url;
+        }
+
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
         function switchAuthMode(mode) {
             const loginView = document.getElementById('view-auth-login');
             const registerView = document.getElementById('view-auth-register');
@@ -179,21 +208,92 @@
             else { registerView.classList.add('d-none'); loginView.classList.remove('d-none'); loginView.classList.add('animate-fade'); }
         }
 
-        async function handleLogin(e) { e.preventDefault(); const identifier = document.getElementById('l-identifier').value; const pass = document.getElementById('l-pass').value; toggleLoading(true); const res = await fetchGAS({ action: 'login', identifier: identifier, password: pass }); toggleLoading(false); if (res.status === 'success') loginSuccess(res.user); else Swal.fire('Gagal', res.message, 'error'); }
-        async function handleRegister(e) { e.preventDefault(); const nik = document.getElementById('r-nik').value; const nama = document.getElementById('r-nama').value; const email = document.getElementById('r-email').value; const pass = document.getElementById('r-pass').value; if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(pass)) { Swal.fire('Password Lemah', 'Min 6 karakter (Huruf & Angka).', 'warning'); return; } toggleLoading(true); const res = await fetchGAS({ action: 'register', nik, nama, email, password: pass }); toggleLoading(false); if (res.status === 'success') { Swal.fire('Berhasil', 'Akun dibuat.', 'success'); switchAuthMode('login'); } else Swal.fire('Gagal', res.message, 'error'); }
-        function handleCredentialResponse(response) { const payload = JSON.parse(atob(response.credential.split('.')[1])); toggleLoading(true); fetchGAS({ action: 'google_login', email: payload.email }).then(res => { toggleLoading(false); if (res.status === 'success') loginSuccess(res.user); else Swal.fire('Akses Ditolak', res.message, 'error'); }); }
-        
+        async function handleLogin(e) {
+            e.preventDefault();
+            const identifier = document.getElementById('l-identifier').value;
+            const pass = document.getElementById('l-pass').value;
+            toggleLoading(true);
+            const res = await fetchGAS({ action: 'login', identifier: identifier, password: pass });
+            toggleLoading(false);
+            if (res.status === 'success') loginSuccess(res.user); else Swal.fire('Gagal', res.message, 'error');
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const nik = document.getElementById('r-nik').value;
+            const nama = document.getElementById('r-nama').value;
+            const email = document.getElementById('r-email').value;
+            const pass = document.getElementById('r-pass').value;
+            if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(pass)) { Swal.fire('Password Lemah', 'Min 6 karakter (Huruf & Angka).', 'warning'); return; }
+            toggleLoading(true);
+            const res = await fetchGAS({ action: 'register', nik, nama, email, password: pass });
+            toggleLoading(false);
+            if (res.status === 'success') { Swal.fire('Berhasil', 'Akun dibuat.', 'success'); switchAuthMode('login'); } else Swal.fire('Gagal', res.message, 'error');
+        }
+
         async function forgotPassword() {
-            const { value: identifier } = await Swal.fire({ title: 'Reset Password', text: 'Masukkan NIK atau Email yang terdaftar:', input: 'text', inputPlaceholder: 'NIK / Email', showCancelButton: true, confirmButtonText: 'Kirim Password Baru', confirmButtonColor: '#005A9C', showLoaderOnConfirm: true, preConfirm: async (loginInfo) => { if (!loginInfo) { Swal.showValidationMessage('Data tidak boleh kosong'); return false; } try { const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'forgot_password', identifier: loginInfo }) }); const result = await response.json(); if (result.status !== 'success') throw new Error(result.message); return result.message; } catch (error) { Swal.showValidationMessage(`Gagal: ${error.message}`); } }, allowOutsideClick: () => !Swal.isLoading() });
+            const { value: identifier } = await Swal.fire({
+                title: 'Reset Password',
+                text: 'Masukkan NIK atau Email yang terdaftar:',
+                input: 'text',
+                inputPlaceholder: 'NIK / Email',
+                showCancelButton: true,
+                confirmButtonText: 'Kirim Password Baru',
+                confirmButtonColor: '#005A9C',
+                showLoaderOnConfirm: true,
+                preConfirm: async (loginInfo) => {
+                    if (!loginInfo) { Swal.showValidationMessage('Data tidak boleh kosong'); return false; }
+                    try {
+                        const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'forgot_password', identifier: loginInfo }) });
+                        const result = await response.json();
+                        if (result.status !== 'success') throw new Error(result.message);
+                        return result.message;
+                    } catch (error) { Swal.showValidationMessage(`Gagal: ${error.message}`); }
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            });
             if (identifier) Swal.fire({ title: 'Berhasil!', text: identifier, icon: 'success' });
         }
 
-        function loginSuccess(user) { currentUser = user; sessionStorage.setItem('simpeg_user', JSON.stringify(user)); if(window.location.hash === '#admin' && user.role !== 'ADMIN') { Swal.fire('Akses Ditolak', 'Anda bukan Admin.', 'warning'); window.location.hash = ''; } initApp(); }
+        function handleCredentialResponse(response) {
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            toggleLoading(true);
+            fetchGAS({ action: 'google_login', email: payload.email }).then(res => {
+                toggleLoading(false);
+                if (res.status === 'success') loginSuccess(res.user); else Swal.fire('Akses Ditolak', res.message, 'error');
+            });
+        }
+
+        function loginSuccess(user) {
+            currentUser = user;
+            sessionStorage.setItem('simpeg_user', JSON.stringify(user));
+            if(window.location.hash === '#admin' && user.role !== 'ADMIN') { Swal.fire('Akses Ditolak', 'Anda bukan Admin.', 'warning'); window.location.hash = ''; }
+            initApp();
+        }
+
         function logout() { sessionStorage.removeItem('simpeg_user'); window.location.reload(); }
-        async function initApp() { document.getElementById('app-login').classList.add('d-none'); document.getElementById('app-main').classList.remove('d-none'); document.getElementById('user-display-name').innerText = currentUser.nama; if (currentUser.role === 'ADMIN') document.getElementById('menu-admin').classList.remove('d-none'); toggleLoading(true); const res = await fetchGAS({ action: 'get_data', nik: currentUser.nik }); toggleLoading(false); if (res.status === 'success') { appData = res.data; if (window.location.hash === '#admin' && currentUser.role === 'ADMIN') navTo('admin'); else navTo('profil'); } }
+
+        async function initApp() {
+            document.getElementById('app-login').classList.add('d-none');
+            document.getElementById('app-main').classList.remove('d-none');
+            document.getElementById('user-display-name').innerText = currentUser.nama;
+            if (currentUser.role === 'ADMIN') document.getElementById('menu-admin').classList.remove('d-none');
+            toggleLoading(true);
+            const res = await fetchGAS({ action: 'get_data', nik: currentUser.nik });
+            toggleLoading(false);
+            if (res.status === 'success') {
+                appData = res.data;
+                if (window.location.hash === '#admin' && currentUser.role === 'ADMIN') navTo('admin'); else navTo('profil');
+            }
+        }
 
         function navTo(page) {
-            if (window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('active'); document.getElementById('sidebar-overlay').classList.remove('active'); }
+            // [MODIFIED] Auto close sidebar on mobile when navigating
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('active');
+                document.getElementById('sidebar-overlay').classList.remove('active');
+            }
+
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
             const menu = document.querySelector(`[onclick="navTo('${page}')"]`);
             if(menu) menu.classList.add('active');
@@ -206,7 +306,6 @@
             else if (page === 'admin') renderAdminDashboardV2(container);
         }
 
-        // --- RENDERERS ---
         function renderProfil(container) {
             const p = appData.profil || {};
             const imgSrc = getImgUrl(p.Foto_Profil);
@@ -327,7 +426,6 @@
             if (formValues) saveData(tableName, formValues);
         }
 
-        // --- ADMIN FUNCTIONS ---
         function renderAdminDashboardV2(container) {
             container.innerHTML = `
                 <div class="card p-4">
@@ -495,50 +593,6 @@
             const res = await fetchGAS({ action: 'admin_bulk_verify', table: tId, ids });
             toggleLoading(false);
             if(res.status==='success') { Swal.fire('Sukses',res.message,'success'); loadAdminAntrean(); } else Swal.fire('Error',res.message,'error');
-        }
-
-        function renderTable(container, title, data, tableName) {
-            let rows = '';
-            if (data && data.length > 0) {
-                data.forEach((item, index) => {
-                    const badge = `<span class="status-badge-${item.Status_Verifikasi}">${item.Status_Verifikasi}</span>`;
-                    let info = '';
-                    if (tableName === 'tb_pangkat') info = `<b>${item.Pangkat}</b><br>SK: ${item.No_SK}`;
-                    else if (tableName === 'tb_jabatan') info = `<b>${item.Nama_Jabatan}</b><br>${item.Unit_Kerja}`;
-                    else if (tableName === 'tb_keluarga') info = `<b>${item.Nama}</b> (${item.Hubungan})`;
-                    else info = `<b>${item.Jenis_Kartu}</b><br>${item.No_Kartu}`;
-                    const btnFile = item.Link_File ? `<a href="${item.Link_File}" target="_blank" class="btn btn-sm btn-info me-1"><i class="fas fa-file"></i></a>` : '';
-                    rows += `<tr><td>${index+1}</td><td>${info}</td><td>${item.TMT||item.Tunjangan||'-'}</td><td>${badge}</td><td>${btnFile}<button onclick="deleteData('${tableName}', '${item.ID}')" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button></td></tr>`;
-                });
-            } else rows = '<tr><td colspan="5" class="text-center p-4">Belum ada data.</td></tr>';
-            container.innerHTML = `<div class="card p-4"><div class="d-flex justify-content-between mb-4"><h4 class="text-primary fw-bold">${title}</h4><button onclick="addData('${tableName}')" class="btn btn-primary"><i class="fas fa-plus"></i> Tambah</button></div><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>No</th><th>Detail</th><th>Ket</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
-        }
-
-        async function saveData(tableName, values, id = null) {
-            toggleLoading(true);
-            const payload = { action: 'save_data', table: tableName, values: values, nik: currentUser.nik };
-            if (id) payload.values.ID = id;
-            const res = await fetchGAS(payload);
-            if (res.status === 'success') {
-                const refresh = await fetchGAS({ action: 'get_data', nik: currentUser.nik });
-                if (refresh.status === 'success') appData = refresh.data;
-                toggleLoading(false);
-                Swal.fire('Berhasil', 'Data disimpan', 'success').then(() => { if(tableName === 'tb_profil') navTo('profil'); else navTo(tableName.split('_')[1]); });
-            } else { toggleLoading(false); Swal.fire('Error', res.message, 'error'); }
-        }
-
-        function deleteData(tableName, id) {
-            Swal.fire({ title: 'Hapus Data?', text: "Data hilang permanen!", icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Hapus' }).then(async (result) => {
-                if (result.isConfirmed) {
-                    toggleLoading(true);
-                    await fetchGAS({ action: 'delete_data', table: tableName, id: id });
-                    const refresh = await fetchGAS({ action: 'get_data', nik: currentUser.nik });
-                    appData = refresh.data;
-                    toggleLoading(false);
-                    Swal.fire('Terhapus', 'Berhasil', 'success');
-                    document.querySelector('.nav-link.active').click();
-                }
-            });
         }
 
         async function fetchGAS(payload) { const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); return await response.json(); }
