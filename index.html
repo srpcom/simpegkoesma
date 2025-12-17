@@ -32,7 +32,6 @@
         }
         .sidebar-overlay.active { display: block; }
 
-        /* Mobile Specifics */
         @media (max-width: 768px) {
             .sidebar { margin-left: -260px; }
             .sidebar.active { margin-left: 0; }
@@ -40,35 +39,13 @@
         }
 
         /* --- SWEETALERT2 CUSTOMIZATION --- */
-        .swal2-popup {
-            font-size: 0.9rem !important; 
-            border-radius: 12px !important;
-            padding: 1.5em !important;
-        }
-        .swal2-title {
-            font-size: 1.4rem !important; 
-            font-weight: 700 !important;
-            color: #333 !important;
-        }
-        .swal2-html-container {
-            font-size: 0.95rem !important;
-            color: #555 !important;
-            text-align: left !important; /* Agar form rata kiri */
-        }
-        /* Style khusus form dalam Swal */
-        .swal-form-group {
-            text-align: left;
-            margin-bottom: 1rem;
-        }
-        .swal-form-label {
-            font-weight: 600;
-            font-size: 0.85rem;
-            margin-bottom: 0.4rem;
-            display: block;
-            color: #444;
-        }
+        .swal2-popup { font-size: 0.9rem !important; border-radius: 12px !important; padding: 1.5em !important; }
+        .swal2-title { font-size: 1.4rem !important; font-weight: 700 !important; color: #333 !important; }
+        .swal2-html-container { font-size: 0.95rem !important; color: #555 !important; text-align: left !important; }
+        .swal-form-group { text-align: left; margin-bottom: 1rem; }
+        .swal-form-label { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem; display: block; color: #444; }
 
-        /* Components & Login */
+        /* Components */
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s; }
         .status-badge-DRAFT { background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; border: 1px solid #ffeeba; }
         .status-badge-VERIFIED { background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; border: 1px solid #c3e6cb; }
@@ -77,6 +54,7 @@
         .nav-tabs .nav-link { cursor: pointer; color: #6c757d; }
         .nav-tabs .nav-link.active { border-bottom: 3px solid var(--primary); color: var(--primary); font-weight: bold; border-top: none; border-left: none; border-right: none; }
         
+        /* Login Styling */
         .login-wrapper { min-height: 100vh; background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%); display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-card-modern { background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); width: 100%; max-width: 420px; padding: 40px; position: relative; overflow: hidden; }
         .login-card-modern::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
@@ -148,7 +126,7 @@
     <!-- MAIN APP SECTION -->
     <div id="app-main" class="d-none">
         
-        <!-- Overlay untuk Mobile -->
+        <!-- Overlay -->
         <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
         <!-- Sidebar -->
@@ -159,10 +137,7 @@
                     <h6 class="fw-bold mb-0">SIMPEG RSUD</h6>
                     <small id="user-display-name" class="text-white-50">User</small>
                 </div>
-                <!-- Tombol Close Sidebar (Hanya di Mobile) -->
-                <button class="btn btn-sm text-white d-md-none position-absolute top-0 end-0 m-3" onclick="toggleSidebar()">
-                    <i class="fas fa-times fa-lg"></i>
-                </button>
+                <button class="btn btn-sm text-white d-md-none position-absolute top-0 end-0 m-3" onclick="toggleSidebar()"><i class="fas fa-times fa-lg"></i></button>
             </div>
             
             <ul class="nav flex-column mb-auto">
@@ -193,35 +168,10 @@
         let selectedIds = []; 
 
         function toggleLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
-
-        // [NEW] Sidebar Toggle Logic
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        }
-
-        function getImgUrl(url) {
-            if (!url || url.length < 5) return 'https://via.placeholder.com/150';
-            if (url.includes('drive.google.com/file/d/')) {
-                try {
-                    const id = url.split('/d/')[1].split('/')[0];
-                    return `https://lh3.googleusercontent.com/d/${id}`;
-                } catch(e) { return url; }
-            }
-            return url;
-        }
-
-        function toBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        }
-
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('sidebar-overlay').classList.toggle('active'); }
+        function getImgUrl(url) { if (!url || url.length < 5) return 'https://via.placeholder.com/150'; if (url.includes('drive.google.com/file/d/')) { try { const id = url.split('/d/')[1].split('/')[0]; return `https://lh3.googleusercontent.com/d/${id}`; } catch(e) { return url; } } return url; }
+        function toBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); }); }
+        
         function switchAuthMode(mode) {
             const loginView = document.getElementById('view-auth-login');
             const registerView = document.getElementById('view-auth-register');
@@ -229,90 +179,21 @@
             else { registerView.classList.add('d-none'); loginView.classList.remove('d-none'); loginView.classList.add('animate-fade'); }
         }
 
-        async function handleLogin(e) {
-            e.preventDefault();
-            const identifier = document.getElementById('l-identifier').value;
-            const pass = document.getElementById('l-pass').value;
-            toggleLoading(true);
-            const res = await fetchGAS({ action: 'login', identifier: identifier, password: pass });
-            toggleLoading(false);
-            if (res.status === 'success') loginSuccess(res.user); else Swal.fire('Gagal', res.message, 'error');
-        }
-
-        async function handleRegister(e) {
-            e.preventDefault();
-            const nik = document.getElementById('r-nik').value;
-            const nama = document.getElementById('r-nama').value;
-            const email = document.getElementById('r-email').value;
-            const pass = document.getElementById('r-pass').value;
-            if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(pass)) { Swal.fire('Password Lemah', 'Min 6 karakter (Huruf & Angka).', 'warning'); return; }
-            toggleLoading(true);
-            const res = await fetchGAS({ action: 'register', nik, nama, email, password: pass });
-            toggleLoading(false);
-            if (res.status === 'success') { Swal.fire('Berhasil', 'Akun dibuat.', 'success'); switchAuthMode('login'); } else Swal.fire('Gagal', res.message, 'error');
-        }
-
+        async function handleLogin(e) { e.preventDefault(); const identifier = document.getElementById('l-identifier').value; const pass = document.getElementById('l-pass').value; toggleLoading(true); const res = await fetchGAS({ action: 'login', identifier: identifier, password: pass }); toggleLoading(false); if (res.status === 'success') loginSuccess(res.user); else Swal.fire('Gagal', res.message, 'error'); }
+        async function handleRegister(e) { e.preventDefault(); const nik = document.getElementById('r-nik').value; const nama = document.getElementById('r-nama').value; const email = document.getElementById('r-email').value; const pass = document.getElementById('r-pass').value; if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(pass)) { Swal.fire('Password Lemah', 'Min 6 karakter (Huruf & Angka).', 'warning'); return; } toggleLoading(true); const res = await fetchGAS({ action: 'register', nik, nama, email, password: pass }); toggleLoading(false); if (res.status === 'success') { Swal.fire('Berhasil', 'Akun dibuat.', 'success'); switchAuthMode('login'); } else Swal.fire('Gagal', res.message, 'error'); }
+        function handleCredentialResponse(response) { const payload = JSON.parse(atob(response.credential.split('.')[1])); toggleLoading(true); fetchGAS({ action: 'google_login', email: payload.email }).then(res => { toggleLoading(false); if (res.status === 'success') loginSuccess(res.user); else Swal.fire('Akses Ditolak', res.message, 'error'); }); }
+        
         async function forgotPassword() {
-            const { value: identifier } = await Swal.fire({
-                title: 'Reset Password',
-                text: 'Masukkan NIK atau Email yang terdaftar:',
-                input: 'text',
-                inputPlaceholder: 'NIK / Email',
-                showCancelButton: true,
-                confirmButtonText: 'Kirim Password Baru',
-                confirmButtonColor: '#005A9C',
-                showLoaderOnConfirm: true,
-                preConfirm: async (loginInfo) => {
-                    if (!loginInfo) { Swal.showValidationMessage('Data tidak boleh kosong'); return false; }
-                    try {
-                        const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'forgot_password', identifier: loginInfo }) });
-                        const result = await response.json();
-                        if (result.status !== 'success') throw new Error(result.message);
-                        return result.message;
-                    } catch (error) { Swal.showValidationMessage(`Gagal: ${error.message}`); }
-                },
-                allowOutsideClick: () => !Swal.isLoading()
-            });
+            const { value: identifier } = await Swal.fire({ title: 'Reset Password', text: 'Masukkan NIK atau Email yang terdaftar:', input: 'text', inputPlaceholder: 'NIK / Email', showCancelButton: true, confirmButtonText: 'Kirim Password Baru', confirmButtonColor: '#005A9C', showLoaderOnConfirm: true, preConfirm: async (loginInfo) => { if (!loginInfo) { Swal.showValidationMessage('Data tidak boleh kosong'); return false; } try { const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'forgot_password', identifier: loginInfo }) }); const result = await response.json(); if (result.status !== 'success') throw new Error(result.message); return result.message; } catch (error) { Swal.showValidationMessage(`Gagal: ${error.message}`); } }, allowOutsideClick: () => !Swal.isLoading() });
             if (identifier) Swal.fire({ title: 'Berhasil!', text: identifier, icon: 'success' });
         }
 
-        function handleCredentialResponse(response) {
-            const payload = JSON.parse(atob(response.credential.split('.')[1]));
-            toggleLoading(true);
-            fetchGAS({ action: 'google_login', email: payload.email }).then(res => {
-                toggleLoading(false);
-                if (res.status === 'success') loginSuccess(res.user); else Swal.fire('Akses Ditolak', res.message, 'error');
-            });
-        }
-
-        function loginSuccess(user) {
-            currentUser = user;
-            sessionStorage.setItem('simpeg_user', JSON.stringify(user));
-            if(window.location.hash === '#admin' && user.role !== 'ADMIN') { Swal.fire('Akses Ditolak', 'Anda bukan Admin.', 'warning'); window.location.hash = ''; }
-            initApp();
-        }
-
+        function loginSuccess(user) { currentUser = user; sessionStorage.setItem('simpeg_user', JSON.stringify(user)); if(window.location.hash === '#admin' && user.role !== 'ADMIN') { Swal.fire('Akses Ditolak', 'Anda bukan Admin.', 'warning'); window.location.hash = ''; } initApp(); }
         function logout() { sessionStorage.removeItem('simpeg_user'); window.location.reload(); }
-
-        async function initApp() {
-            document.getElementById('app-login').classList.add('d-none');
-            document.getElementById('app-main').classList.remove('d-none');
-            document.getElementById('user-display-name').innerText = currentUser.nama;
-            if (currentUser.role === 'ADMIN') document.getElementById('menu-admin').classList.remove('d-none');
-            toggleLoading(true);
-            const res = await fetchGAS({ action: 'get_data', nik: currentUser.nik });
-            toggleLoading(false);
-            if (res.status === 'success') {
-                appData = res.data;
-                if (window.location.hash === '#admin' && currentUser.role === 'ADMIN') navTo('admin'); else navTo('profil');
-            }
-        }
+        async function initApp() { document.getElementById('app-login').classList.add('d-none'); document.getElementById('app-main').classList.remove('d-none'); document.getElementById('user-display-name').innerText = currentUser.nama; if (currentUser.role === 'ADMIN') document.getElementById('menu-admin').classList.remove('d-none'); toggleLoading(true); const res = await fetchGAS({ action: 'get_data', nik: currentUser.nik }); toggleLoading(false); if (res.status === 'success') { appData = res.data; if (window.location.hash === '#admin' && currentUser.role === 'ADMIN') navTo('admin'); else navTo('profil'); } }
 
         function navTo(page) {
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('active');
-                document.getElementById('sidebar-overlay').classList.remove('active');
-            }
+            if (window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('active'); document.getElementById('sidebar-overlay').classList.remove('active'); }
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
             const menu = document.querySelector(`[onclick="navTo('${page}')"]`);
             if(menu) menu.classList.add('active');
@@ -325,6 +206,7 @@
             else if (page === 'admin') renderAdminDashboardV2(container);
         }
 
+        // --- RENDERERS ---
         function renderProfil(container) {
             const p = appData.profil || {};
             const imgSrc = getImgUrl(p.Foto_Profil);
@@ -368,36 +250,84 @@
                 const { value: formValues } = await Swal.fire({
                     title: 'Edit Profil', width: '600px', showCancelButton: true, confirmButtonText: 'Simpan',
                     html: `
-                        <input id="sw-nip" class="swal2-input" placeholder="NIP" value="${p.NIP||''}">
-                        <input id="sw-nama" class="swal2-input" placeholder="Nama Lengkap" value="${p.Nama||''}">
-                        <div class="d-flex gap-2 mx-5 mt-3"><input id="sw-tmp" class="form-control" placeholder="Tmp Lahir" value="${p.Tmp_Lahir||''}"><input id="sw-tgl" class="form-control" type="date" value="${p.Tgl_Lahir||''}"></div>
-                        <select id="sw-jk" class="swal2-select" style="width:80%; margin: 10px auto; display:block;"><option value="L" ${p.JK=='L'?'selected':''}>Laki-laki</option><option value="P" ${p.JK=='P'?'selected':''}>Perempuan</option></select>
-                        <input id="sw-email" class="swal2-input" placeholder="Email Kontak" value="${p.Email||''}">
-                        <div class="text-muted small mx-5 mb-2" style="font-size:0.7em">*Tidak mengubah email login.</div>
-                        <input id="sw-hp" class="swal2-input" placeholder="Nomor HP" value="${p.No_HP||''}">
-                        <input id="sw-alamat" class="swal2-input" placeholder="Alamat Domisili" value="${p.Alamat||''}">
-                        <input id="sw-pend" class="swal2-input" placeholder="Pendidikan Terakhir" value="${p.Pendidikan||''}">
-                        <input id="sw-jab" class="swal2-input" placeholder="Jabatan Terakhir" value="${p.Jabatan_Terakhir||''}">
-                        <div class="mx-5 mt-3 text-start"><label class="small">Foto Profil</label><input type="file" id="sw-foto" class="form-control"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">NIK</label><input id="sw-nip" class="form-control" placeholder="NIP" value="${p.NIP||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="sw-nama" class="form-control" placeholder="Nama Lengkap" value="${p.Nama||''}"></div>
+                        <div class="d-flex gap-2 mb-3"><div class="w-50"><label class="swal-form-label">Tmp Lahir</label><input id="sw-tmp" class="form-control" value="${p.Tmp_Lahir||''}"></div><div class="w-50"><label class="swal-form-label">Tgl Lahir</label><input id="sw-tgl" class="form-control" type="date" value="${p.Tgl_Lahir||''}"></div></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Jenis Kelamin</label><select id="sw-jk" class="form-select"><option value="L" ${p.JK=='L'?'selected':''}>Laki-laki</option><option value="P" ${p.JK=='P'?'selected':''}>Perempuan</option></select></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Email Kontak</label><input id="sw-email" class="form-control" value="${p.Email||''}"><small class="text-muted">*Tidak mengubah email login.</small></div>
+                        <div class="swal-form-group"><label class="swal-form-label">No HP</label><input id="sw-hp" class="form-control" value="${p.No_HP||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Alamat</label><input id="sw-alamat" class="form-control" value="${p.Alamat||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Pendidikan</label><input id="sw-pend" class="form-control" value="${p.Pendidikan||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="sw-jab" class="form-control" value="${p.Jabatan_Terakhir||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Foto Profil</label><input type="file" id="sw-foto" class="form-control"></div>
                     `,
                     preConfirm: async () => {
                         const fileInput = document.getElementById('sw-foto').files[0];
                         let fotoUrl = p.Foto_Profil;
-                        if (fileInput) {
-                            const base64 = await toBase64(fileInput);
-                            const upRes = await fetchGAS({ action: 'upload_file', base64: base64.split(',')[1], mimeType: fileInput.type, nik: currentUser.nik, type: 'FOTO' });
-                            if(upRes.status === 'success') fotoUrl = upRes.url;
-                        }
-                        return {
-                            NIP: document.getElementById('sw-nip').value, Nama: document.getElementById('sw-nama').value, Tmp_Lahir: document.getElementById('sw-tmp').value, Tgl_Lahir: document.getElementById('sw-tgl').value,
-                            JK: document.getElementById('sw-jk').value, Email: document.getElementById('sw-email').value, No_HP: document.getElementById('sw-hp').value, Alamat: document.getElementById('sw-alamat').value, Pendidikan: document.getElementById('sw-pend').value, Jabatan_Terakhir: document.getElementById('sw-jab').value, Foto_Profil: fotoUrl
-                        };
+                        if (fileInput) { const base64 = await toBase64(fileInput); const upRes = await fetchGAS({ action: 'upload_file', base64: base64.split(',')[1], mimeType: fileInput.type, nik: currentUser.nik, type: 'FOTO' }); if(upRes.status === 'success') fotoUrl = upRes.url; }
+                        return { NIP: document.getElementById('sw-nip').value, Nama: document.getElementById('sw-nama').value, Tmp_Lahir: document.getElementById('sw-tmp').value, Tgl_Lahir: document.getElementById('sw-tgl').value, JK: document.getElementById('sw-jk').value, Email: document.getElementById('sw-email').value, No_HP: document.getElementById('sw-hp').value, Alamat: document.getElementById('sw-alamat').value, Pendidikan: document.getElementById('sw-pend').value, Jabatan_Terakhir: document.getElementById('sw-jab').value, Foto_Profil: fotoUrl };
                     }
                 });
                 if (formValues) saveData('tb_profil', formValues);
             } catch (err) { console.error(err); Swal.fire('Error', 'Terjadi kesalahan.', 'error'); }
         }
 
+        async function addData(tableName) {
+            let htmlForm = '';
+            // [UPDATED FORM STRUCTURE]
+            if (tableName === 'tb_pangkat') {
+                htmlForm = `
+                    <div class="swal-form-group"><label class="swal-form-label">Golongan</label><input id="f-gol" class="form-control" placeholder="Contoh: III/a"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Pangkat</label><input id="f-pangkat" class="form-control" placeholder="Nama Pangkat"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Nomor SK</label><input id="f-nosk" class="form-control" placeholder="Nomor SK"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Tanggal SK</label><input type="date" id="f-tglsk" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="f-tmt" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Upload SK (PDF/Img)</label><input type="file" id="f-file" class="form-control"></div>`;
+            } else if (tableName === 'tb_keluarga') {
+                htmlForm = `
+                    <div class="swal-form-group"><label class="swal-form-label">Nama Anggota Keluarga</label><input id="f-nama" class="form-control" placeholder="Nama Lengkap"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">NIK Anggota</label><input id="f-nik" class="form-control" placeholder="NIK"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Hubungan</label><select id="f-hub" class="form-select"><option>Suami</option><option>Istri</option><option>Anak</option></select></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Jenis Kelamin</label><select id="f-jk" class="form-select"><option value="L">L</option><option value="P">P</option></select></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Tanggal Lahir</label><input type="date" id="f-tgl" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Tunjangan</label><select id="f-tunj" class="form-select"><option value="Ya">Dapat Tunjangan</option><option value="Tidak">Tidak</option></select></div>`;
+            } else if (tableName === 'tb_jabatan') {
+                htmlForm = `
+                    <div class="swal-form-group"><label class="swal-form-label">Nama Jabatan</label><input id="f-nama" class="form-control" placeholder="Nama Jabatan"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Jenis Jabatan</label><select id="f-jenis" class="form-select"><option>Struktural</option><option>Fungsional</option><option>Pelaksana</option></select></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Eselon (Opsional)</label><input id="f-eselon" class="form-control" placeholder="Eselon"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Unit Kerja</label><input id="f-unit" class="form-control" placeholder="Unit Kerja"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Nomor SK</label><input id="f-nosk" class="form-control" placeholder="No SK"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="f-tmt" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Upload SK</label><input type="file" id="f-file" class="form-control"></div>`;
+            } else if (tableName === 'tb_kartu') {
+                htmlForm = `
+                    <div class="swal-form-group"><label class="swal-form-label">Jenis Kartu</label><select id="f-jenis" class="form-select"><option>BPJS</option><option>NPWP</option><option>Karpeg</option><option>Taspen</option></select></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Nomor Kartu</label><input id="f-nomor" class="form-control" placeholder="Nomor Kartu"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Upload Foto Kartu</label><input type="file" id="f-file" class="form-control"></div>`;
+            }
+
+            const { value: formValues } = await Swal.fire({
+                title: 'Tambah Data', html: htmlForm, showCancelButton: true, confirmButtonText: 'Simpan', customClass: { popup: 'swal-wide-mobile' },
+                preConfirm: async () => {
+                    if (!htmlForm) return null;
+                    let fileUrl = ''; const fileInput = document.getElementById('f-file');
+                    if (fileInput && fileInput.files[0]) {
+                        const base64 = await toBase64(fileInput.files[0]);
+                        const upRes = await fetchGAS({ action: 'upload_file', base64: base64.split(',')[1], mimeType: fileInput.files[0].type, nik: currentUser.nik, type: 'DOC' });
+                        if (upRes.status === 'success') fileUrl = upRes.url;
+                    }
+                    if (tableName === 'tb_pangkat') return { Golongan: document.getElementById('f-gol').value, Pangkat: document.getElementById('f-pangkat').value, No_SK: document.getElementById('f-nosk').value, Tgl_SK: document.getElementById('f-tglsk').value, TMT: document.getElementById('f-tmt').value, Link_File: fileUrl };
+                    else if (tableName === 'tb_keluarga') return { Nama: document.getElementById('f-nama').value, NIK_Anggota: document.getElementById('f-nik').value, Hubungan: document.getElementById('f-hub').value, JK: document.getElementById('f-jk').value, Tgl_Lahir: document.getElementById('f-tgl').value, Tunjangan: document.getElementById('f-tunj').value };
+                    else if (tableName === 'tb_jabatan') return { Nama_Jabatan: document.getElementById('f-nama').value, Jenis_Jabatan: document.getElementById('f-jenis').value, Eselon: document.getElementById('f-eselon').value, Unit_Kerja: document.getElementById('f-unit').value, No_SK: document.getElementById('f-nosk').value, TMT: document.getElementById('f-tmt').value, Link_File: fileUrl };
+                    else if (tableName === 'tb_kartu') return { Jenis_Kartu: document.getElementById('f-jenis').value, No_Kartu: document.getElementById('f-nomor').value, Link_File: fileUrl };
+                    return {};
+                }
+            });
+            if (formValues) saveData(tableName, formValues);
+        }
+
+        // --- ADMIN FUNCTIONS ---
         function renderAdminDashboardV2(container) {
             container.innerHTML = `
                 <div class="card p-4">
@@ -462,7 +392,10 @@
                         <td>${p.Pendidikan || '-'}</td>
                         <td>${p.Jabatan_Terakhir || '-'}</td>
                         <td><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi}</span></td>
-                        <td><button onclick="showDetailUser('${encodeURIComponent(JSON.stringify(p))}')" class="btn btn-sm btn-info text-white"><i class="fas fa-eye"></i></button></td>
+                        <td>
+                            <button onclick="showDetailUser('${encodeURIComponent(JSON.stringify(p))}')" class="btn btn-sm btn-info text-white me-1" title="Lihat"><i class="fas fa-eye"></i></button>
+                            <button onclick="editUserAdmin('${encodeURIComponent(JSON.stringify(p))}')" class="btn btn-sm btn-warning text-dark" title="Edit Data"><i class="fas fa-pencil-alt"></i></button>
+                        </td>
                     </tr>`).join('');
                 container.innerHTML = `<div class="d-flex justify-content-between mb-3"><input type="text" id="search-master" class="form-control w-50" placeholder="Cari..." onkeyup="filterMasterTable()"><button class="btn btn-outline-primary" onclick="loadAdminMaster()"><i class="fas fa-sync"></i> Refresh</button></div><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>No</th><th>Nama/NIP</th><th>Pend.</th><th>Jabatan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${rows}</tbody></table></div>`;
             }
@@ -485,6 +418,45 @@
                 html: `<div class="text-start"><table class="table table-sm table-borderless"><tr><td width="30%"><strong>Nama</strong></td><td>: ${p.Nama}</td></tr><tr><td><strong>NIK</strong></td><td>: ${p.NIK}</td></tr><tr><td><strong>Pendidikan</strong></td><td>: ${p.Pendidikan||'-'}</td></tr><tr><td><strong>Jabatan</strong></td><td>: ${p.Jabatan_Terakhir||'-'}</td></tr><tr><td><strong>Email</strong></td><td>: ${p.Email||'-'}</td></tr><tr><td><strong>No HP</strong></td><td>: ${p.No_HP||'-'}</td></tr></table></div>`,
                 width: '500px'
             });
+        }
+
+        async function editUserAdmin(pStr) {
+            const p = JSON.parse(decodeURIComponent(pStr));
+            try {
+                const { value: formValues } = await Swal.fire({
+                    title: 'Edit Data Pegawai', width: '600px', showCancelButton: true, confirmButtonText: 'Simpan Perubahan', confirmButtonColor: '#e0a800',
+                    html: `
+                        <div class="swal-form-group"><label class="swal-form-label">NIK (Tidak Dapat Diubah)</label><input id="sw-nip" class="form-control bg-light" value="${p.NIK}" readonly></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Nama Lengkap</label><input id="sw-nama" class="form-control" value="${p.Nama||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">NIP</label><input id="sw-real-nip" class="form-control" value="${p.NIP||''}"></div>
+                        <div class="d-flex gap-2 mb-3"><div class="w-50"><label class="swal-form-label">Tmp Lahir</label><input id="sw-tmp" class="form-control" value="${p.Tmp_Lahir||''}"></div><div class="w-50"><label class="swal-form-label">Tgl Lahir</label><input id="sw-tgl" class="form-control" type="date" value="${p.Tgl_Lahir||''}"></div></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Unit Kerja</label><input id="sw-unit" class="form-control" value="${p.Unit_Kerja||''}" placeholder="Unit Kerja"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="sw-jab" class="form-control" value="${p.Jabatan_Terakhir||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Pendidikan Terakhir</label><input id="sw-pend" class="form-control" value="${p.Pendidikan||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Email Kontak</label><input id="sw-email" class="form-control" value="${p.Email||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">No HP</label><input id="sw-hp" class="form-control" value="${p.No_HP||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Alamat</label><input id="sw-alamat" class="form-control" value="${p.Alamat||''}"></div>
+                    `,
+                    preConfirm: async () => {
+                        return { NIK: document.getElementById('sw-nip').value, Nama: document.getElementById('sw-nama').value, NIP: document.getElementById('sw-real-nip').value, Tmp_Lahir: document.getElementById('sw-tmp').value, Tgl_Lahir: document.getElementById('sw-tgl').value, Unit_Kerja: document.getElementById('sw-unit').value, Jabatan_Terakhir: document.getElementById('sw-jab').value, Pendidikan: document.getElementById('sw-pend').value, Email: document.getElementById('sw-email').value, No_HP: document.getElementById('sw-hp').value, Alamat: document.getElementById('sw-alamat').value };
+                    }
+                });
+                if (formValues) { saveData('tb_profil', formValues, null, p.NIK); }
+            } catch (err) { console.error(err); Swal.fire('Error', 'Gagal membuka form edit.', 'error'); }
+        }
+
+        async function saveData(tableName, values, id = null, targetNik = null) {
+            toggleLoading(true);
+            const effectiveNik = targetNik || currentUser.nik;
+            const isAdminAction = (currentUser.role === 'ADMIN');
+            const payload = { action: 'save_data', table: tableName, values: values, nik: effectiveNik, isAdmin: isAdminAction };
+            if (id) payload.values.ID = id;
+            const res = await fetchGAS(payload);
+            if (res.status === 'success') {
+                if (!targetNik || targetNik === currentUser.nik) { const refresh = await fetchGAS({ action: 'get_data', nik: currentUser.nik }); if (refresh.status === 'success') appData = refresh.data; }
+                toggleLoading(false);
+                Swal.fire('Berhasil', 'Data disimpan.', 'success').then(() => { if (targetNik && isAdminAction) { loadAdminMaster(); } else { if(tableName === 'tb_profil') navTo('profil'); else navTo(tableName.split('_')[1]); } });
+            } else { toggleLoading(false); Swal.fire('Error', res.message, 'error'); }
         }
 
         function loadAdminArsipView() {
@@ -567,133 +539,6 @@
                     document.querySelector('.nav-link.active').click();
                 }
             });
-        }
-
-        async function addData(tableName) {
-            let htmlForm = '';
-            // [MODIFIED] Using Bootstrap Classes for Vertical Stacking
-            if (tableName === 'tb_pangkat') {
-                htmlForm = `
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Golongan</label>
-                        <input id="f-gol" class="form-control" placeholder="Contoh: III/a">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Pangkat</label>
-                        <input id="f-pangkat" class="form-control" placeholder="Nama Pangkat">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Nomor SK</label>
-                        <input id="f-nosk" class="form-control" placeholder="Nomor SK">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Tanggal SK</label>
-                        <input type="date" id="f-tglsk" class="form-control">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">TMT</label>
-                        <input type="date" id="f-tmt" class="form-control">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Upload SK (PDF/Img)</label>
-                        <input type="file" id="f-file" class="form-control">
-                    </div>`;
-            } else if (tableName === 'tb_keluarga') {
-                htmlForm = `
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Nama Anggota Keluarga</label>
-                        <input id="f-nama" class="form-control" placeholder="Nama Lengkap">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">NIK Anggota</label>
-                        <input id="f-nik" class="form-control" placeholder="NIK">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Hubungan</label>
-                        <select id="f-hub" class="form-select"><option>Suami</option><option>Istri</option><option>Anak</option></select>
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Jenis Kelamin</label>
-                        <select id="f-jk" class="form-select"><option value="L">L</option><option value="P">P</option></select>
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Tanggal Lahir</label>
-                        <input type="date" id="f-tgl" class="form-control">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Tunjangan</label>
-                        <select id="f-tunj" class="form-select"><option value="Ya">Dapat Tunjangan</option><option value="Tidak">Tidak</option></select>
-                    </div>`;
-            } else if (tableName === 'tb_jabatan') {
-                htmlForm = `
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Nama Jabatan</label>
-                        <input id="f-nama" class="form-control" placeholder="Nama Jabatan">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Jenis Jabatan</label>
-                        <select id="f-jenis" class="form-select"><option>Struktural</option><option>Fungsional</option><option>Pelaksana</option></select>
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Eselon (Opsional)</label>
-                        <input id="f-eselon" class="form-control" placeholder="Eselon">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Unit Kerja</label>
-                        <input id="f-unit" class="form-control" placeholder="Unit Kerja">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Nomor SK</label>
-                        <input id="f-nosk" class="form-control" placeholder="No SK">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">TMT</label>
-                        <input type="date" id="f-tmt" class="form-control">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Upload SK</label>
-                        <input type="file" id="f-file" class="form-control">
-                    </div>`;
-            } else if (tableName === 'tb_kartu') {
-                htmlForm = `
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Jenis Kartu</label>
-                        <select id="f-jenis" class="form-select"><option>BPJS</option><option>NPWP</option><option>Karpeg</option><option>Taspen</option></select>
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Nomor Kartu</label>
-                        <input id="f-nomor" class="form-control" placeholder="Nomor Kartu">
-                    </div>
-                    <div class="swal-form-group">
-                        <label class="swal-form-label">Upload Foto Kartu</label>
-                        <input type="file" id="f-file" class="form-control">
-                    </div>`;
-            }
-
-            const { value: formValues } = await Swal.fire({
-                title: 'Tambah Data',
-                html: htmlForm,
-                showCancelButton: true,
-                confirmButtonText: 'Simpan',
-                customClass: {
-                    popup: 'swal-wide-mobile' // Optional custom class if needed
-                },
-                preConfirm: async () => {
-                    if (!htmlForm) return null;
-                    let fileUrl = ''; const fileInput = document.getElementById('f-file');
-                    if (fileInput && fileInput.files[0]) {
-                        const base64 = await toBase64(fileInput.files[0]);
-                        const upRes = await fetchGAS({ action: 'upload_file', base64: base64.split(',')[1], mimeType: fileInput.files[0].type, nik: currentUser.nik, type: 'DOC' });
-                        if (upRes.status === 'success') fileUrl = upRes.url;
-                    }
-                    if (tableName === 'tb_pangkat') return { Golongan: document.getElementById('f-gol').value, Pangkat: document.getElementById('f-pangkat').value, No_SK: document.getElementById('f-nosk').value, Tgl_SK: document.getElementById('f-tglsk').value, TMT: document.getElementById('f-tmt').value, Link_File: fileUrl };
-                    else if (tableName === 'tb_keluarga') return { Nama: document.getElementById('f-nama').value, NIK_Anggota: document.getElementById('f-nik').value, Hubungan: document.getElementById('f-hub').value, JK: document.getElementById('f-jk').value, Tgl_Lahir: document.getElementById('f-tgl').value, Tunjangan: document.getElementById('f-tunj').value };
-                    else if (tableName === 'tb_jabatan') return { Nama_Jabatan: document.getElementById('f-nama').value, Jenis_Jabatan: document.getElementById('f-jenis').value, Eselon: document.getElementById('f-eselon').value, Unit_Kerja: document.getElementById('f-unit').value, No_SK: document.getElementById('f-nosk').value, TMT: document.getElementById('f-tmt').value, Link_File: fileUrl };
-                    else if (tableName === 'tb_kartu') return { Jenis_Kartu: document.getElementById('f-jenis').value, No_Kartu: document.getElementById('f-nomor').value, Link_File: fileUrl };
-                    return {};
-                }
-            });
-            if (formValues) saveData(tableName, formValues);
         }
 
         async function fetchGAS(payload) { const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); return await response.json(); }
