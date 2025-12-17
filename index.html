@@ -417,7 +417,10 @@
             const p = appData.profil || {}; 
             try {
                 const { value: formValues } = await Swal.fire({
-                    title: 'Edit Profil', width: '600px', showCancelButton: true, confirmButtonText: 'Simpan',
+                    title: 'Edit Profil', 
+                    width: '600px', 
+                    showCancelButton: true, 
+                    confirmButtonText: 'Simpan',
                     html: `
                         <div class="swal-form-group"><label class="swal-form-label">NIK (KTP) <span class="text-danger">*Kunci Data</span></label><input id="sw-real-nik" class="form-control bg-light" value="${p.NIK||''}" readonly></div>
                         <div class="swal-form-group"><label class="swal-form-label">NIP (Nomor Induk Pegawai)</label><input id="sw-nip" class="form-control" placeholder="Masukkan NIP Baru" value="${p.NIP||''}"></div>
@@ -444,7 +447,7 @@
 
         async function addData(tn) {
             let htmlForm = '';
-            if (tableName === 'tb_pangkat') {
+            if (tn === 'tb_pangkat') {
                 htmlForm = `
                     <div class="swal-form-group"><label class="swal-form-label">Golongan</label><input id="f-1" class="form-control" placeholder="Contoh: III/a"></div>
                     <div class="swal-form-group"><label class="swal-form-label">Pangkat</label><input id="f-2" class="form-control" placeholder="Nama Pangkat"></div>
@@ -452,7 +455,7 @@
                     <div class="swal-form-group"><label class="swal-form-label">Tgl SK</label><input type="date" id="f-4" class="form-control"></div>
                     <div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="f-5" class="form-control"></div>
                     <div class="swal-form-group"><label class="swal-form-label">File SK</label><input type="file" id="f-f" class="form-control"></div>`;
-            } else if (tableName === 'tb_keluarga') {
+            } else if (tn === 'tb_keluarga') {
                 htmlForm = `
                     <div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="f-1" class="form-control"></div>
                     <div class="swal-form-group"><label class="swal-form-label">NIK</label><input id="f-2" class="form-control"></div>
@@ -460,7 +463,7 @@
                     <div class="swal-form-group"><label class="swal-form-label">JK</label><select id="f-4" class="form-select"><option value="L">L</option><option value="P">P</option></select></div>
                     <div class="swal-form-group"><label class="swal-form-label">Tgl Lahir</label><input type="date" id="f-5" class="form-control"></div>
                     <div class="swal-form-group"><label class="swal-form-label">Tunjangan</label><select id="f-6" class="form-select"><option>Ya</option><option>Tidak</option></select></div>`;
-            } else if (tableName === 'tb_jabatan') {
+            } else if (tn === 'tb_jabatan') {
                 htmlForm = `
                     <div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="f-1" class="form-control"></div>
                     <div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="f-2" class="form-select"><option>Struktural</option><option>Fungsional</option></select></div>
@@ -469,7 +472,7 @@
                     <div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="f-5" class="form-control"></div>
                     <div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="f-6" class="form-control"></div>
                     <div class="swal-form-group"><label class="swal-form-label">File SK</label><input type="file" id="f-f" class="form-control"></div>`;
-            } else if (tableName === 'tb_kartu') {
+            } else if (tn === 'tb_kartu') {
                 htmlForm = `
                     <div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="f-1" class="form-select"><option>BPJS</option><option>NPWP</option><option>Karpeg</option></select></div>
                     <div class="swal-form-group"><label class="swal-form-label">Nomor</label><input id="f-2" class="form-control"></div>
@@ -486,14 +489,14 @@
                         const upRes = await fetchGAS({ action: 'upload_file', base64: base64.split(',')[1], mimeType: fileInput.files[0].type, nik: currentUser.nik, type: 'DOC' });
                         if (upRes.status === 'success') fileUrl = upRes.url;
                     }
-                    if (tableName === 'tb_pangkat') return { Golongan: document.getElementById('f-1').value, Pangkat: document.getElementById('f-2').value, No_SK: document.getElementById('f-3').value, Tgl_SK: document.getElementById('f-4').value, TMT: document.getElementById('f-5').value, Link_File: fileUrl };
-                    else if (tableName === 'tb_keluarga') return { Nama: document.getElementById('f-1').value, NIK_Anggota: document.getElementById('f-2').value, Hubungan: document.getElementById('f-3').value, JK: document.getElementById('f-4').value, Tgl_Lahir: document.getElementById('f-5').value, Tunjangan: document.getElementById('f-6').value };
-                    else if (tableName === 'tb_jabatan') return { Nama_Jabatan: document.getElementById('f-1').value, Jenis_Jabatan: document.getElementById('f-2').value, Eselon: document.getElementById('f-3').value, Unit_Kerja: document.getElementById('f-4').value, No_SK: document.getElementById('f-5').value, TMT: document.getElementById('f-6').value, Link_File: fileUrl };
-                    else if (tableName === 'tb_kartu') return { Jenis_Kartu: document.getElementById('f-1').value, No_Kartu: document.getElementById('f-2').value, Link_File: fileUrl };
+                    if (tn === 'tb_pangkat') return { Golongan: document.getElementById('f-1').value, Pangkat: document.getElementById('f-2').value, No_SK: document.getElementById('f-3').value, Tgl_SK: document.getElementById('f-4').value, TMT: document.getElementById('f-5').value, Link_File: fileUrl };
+                    else if (tn === 'tb_keluarga') return { Nama: document.getElementById('f-1').value, NIK_Anggota: document.getElementById('f-2').value, Hubungan: document.getElementById('f-3').value, JK: document.getElementById('f-4').value, Tgl_Lahir: document.getElementById('f-5').value, Tunjangan: document.getElementById('f-6').value };
+                    else if (tn === 'tb_jabatan') return { Nama_Jabatan: document.getElementById('f-1').value, Jenis_Jabatan: document.getElementById('f-2').value, Eselon: document.getElementById('f-3').value, Unit_Kerja: document.getElementById('f-4').value, No_SK: document.getElementById('f-5').value, TMT: document.getElementById('f-6').value, Link_File: fileUrl };
+                    else if (tn === 'tb_kartu') return { Jenis_Kartu: document.getElementById('f-1').value, No_Kartu: document.getElementById('f-2').value, Link_File: fileUrl };
                     return {};
                 }
             });
-            if (formValues) saveData(tableName, formValues);
+            if (formValues) saveData(tn, formValues);
         }
 
         async function saveData(t,v,id=null,tk=null) { toggleLoading(true); const n=tk||currentUser.nik; const ia=currentUser.role==='ADMIN'; const p={action:'save_data',table:t,values:v,nik:n,isAdmin:ia}; if(id)p.values.ID=id; const r=await fetchGAS(p); if(r.status==='success'){ if(!tk||tk===currentUser.nik){const ref=await fetchGAS({action:'get_data',nik:currentUser.nik});if(ref.status==='success')appData=ref.data;} toggleLoading(false); Swal.fire('Sukses','Tersimpan','success').then(()=>{ if(tk&&ia)loadAdminMaster(); else if(t==='tb_profil')navTo('profil'); else navTo(t.split('_')[1]); }); }else{toggleLoading(false);Swal.fire('Error',r.message,'error')} }
