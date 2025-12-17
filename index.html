@@ -18,11 +18,24 @@
         .sidebar { 
             min-height: 100vh; width: 260px; background: var(--primary); color: white; 
             position: fixed; transition: all 0.3s; z-index: 1050; 
+            left: 0; /* Default visible on desktop */
         }
-        .sidebar .nav-link { color: rgba(255,255,255,0.8); margin: 5px 15px; border-radius: 8px; font-weight: 500; }
+        .sidebar.collapsed { left: -260px; } /* Class to hide on desktop */
+
+        /* [FIX] Ensure Nav Links are Clickable */
+        .sidebar .nav-link { 
+            color: rgba(255,255,255,0.8); margin: 5px 15px; border-radius: 8px; font-weight: 500; 
+            cursor: pointer; /* Pastikan cursor pointer */
+            position: relative; /* Pastikan z-index berlaku lokal */
+            z-index: 1051;
+        }
         .sidebar .nav-link:hover, .sidebar .nav-link.active { background: rgba(255,255,255,0.15); color: white; transform: translateX(5px); }
         .sidebar .nav-link i { width: 25px; }
-        .main-content { margin-left: 260px; padding: 25px; transition: all 0.3s; }
+        
+        .main-content { 
+            margin-left: 260px; padding: 25px; transition: all 0.3s; 
+        }
+        .main-content.expanded { margin-left: 0; } /* Class to expand content on desktop */
         
         /* Mobile Overlay */
         .sidebar-overlay {
@@ -32,10 +45,13 @@
         }
         .sidebar-overlay.active { display: block; }
 
+        /* Mobile Specifics */
         @media (max-width: 768px) {
-            .sidebar { margin-left: -260px; }
-            .sidebar.active { margin-left: 0; }
+            .sidebar { left: -260px; } /* Default hidden on mobile */
+            .sidebar.active { left: 0; } /* Show when active */
+            .sidebar.collapsed { left: -260px; } /* Override collapsed logic */
             .main-content { margin-left: 0; }
+            .main-content.expanded { margin-left: 0; }
         }
 
         /* --- SWEETALERT2 CUSTOMIZATION --- */
@@ -155,6 +171,7 @@
                     <h6 class="fw-bold mb-0">SIMPEG RSUD</h6>
                     <small id="user-display-name" class="text-white-50">User</small>
                 </div>
+                <!-- Tombol Close Sidebar (Mobile Only) -->
                 <button class="btn btn-sm text-white d-md-none position-absolute top-0 end-0 m-3" onclick="toggleSidebar()">
                     <i class="fas fa-times fa-lg"></i>
                 </button>
@@ -162,12 +179,13 @@
             
             <ul class="nav flex-column mb-auto">
                 <!-- Using Internal Keys for Logic, but Labels can be anything -->
-                <li class="nav-item"><a href="#" class="nav-link active" onclick="navTo('profil')"><i class="fas fa-user-circle"></i> Profil Pegawai</a></li>
-                <li class="nav-item"><a href="#" class="nav-link" onclick="navTo('pangkat')"><i class="fas fa-medal"></i> Riwayat Pangkat</a></li>
-                <li class="nav-item"><a href="#" class="nav-link" onclick="navTo('jabatan')"><i class="fas fa-briefcase"></i> Riwayat Jabatan</a></li>
-                <li class="nav-item"><a href="#" class="nav-link" onclick="navTo('keluarga')"><i class="fas fa-users"></i> Anggota Keluarga</a></li>
-                <li class="nav-item"><a href="#" class="nav-link" onclick="navTo('kartu')"><i class="fas fa-id-card"></i> Data Kartu</a></li>
-                <li class="nav-item d-none" id="menu-admin"><a href="#" class="nav-link bg-danger text-white mt-3" onclick="navTo('admin')"><i class="fas fa-user-shield"></i> Admin Dashboard</a></li>
+                <!-- [FIX] Added cursor:pointer to make sure mobile browsers treat them as clickable -->
+                <li class="nav-item"><a class="nav-link active" onclick="navTo('profil')" style="cursor: pointer;"><i class="fas fa-user-circle"></i> Profil Pegawai</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="navTo('pangkat')" style="cursor: pointer;"><i class="fas fa-medal"></i> Riwayat Pangkat</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="navTo('jabatan')" style="cursor: pointer;"><i class="fas fa-briefcase"></i> Riwayat Jabatan</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="navTo('keluarga')" style="cursor: pointer;"><i class="fas fa-users"></i> Anggota Keluarga</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="navTo('kartu')" style="cursor: pointer;"><i class="fas fa-id-card"></i> Data Kartu</a></li>
+                <li class="nav-item d-none" id="menu-admin"><a class="nav-link bg-danger text-white mt-3" onclick="navTo('admin')" style="cursor: pointer;"><i class="fas fa-user-shield"></i> Admin Dashboard</a></li>
             </ul>
             <div class="mt-auto"><button onclick="logout()" class="btn btn-outline-light w-100"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
         </div>
@@ -189,21 +207,60 @@
         let selectedIds = []; 
 
         function toggleLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
-        function toggleSidebar() { 
+
+        // [MODIFIED] Sidebar Toggle Logic (Works on Mobile & Desktop)
+        function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
+            const mainContent = document.getElementById('main-content');
+            
+            // Cek apakah mode Desktop atau Mobile
+            if (window.innerWidth > 768) {
+                // Desktop: Toggle Collapse
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+            } else {
+                // Mobile: Toggle Overlay
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            }
         }
+
+        // [HELPER] Toggle Password Visibility
         function togglePassword(inputId, trigger) {
             const input = document.getElementById(inputId);
             const icon = trigger.querySelector('i');
-            if (input.type === "password") { input.type = "text"; icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash'); } 
-            else { input.type = "password"; icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = "password";
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
         }
-        function getImgUrl(url) { if (!url || url.length < 5) return 'https://via.placeholder.com/150'; if (url.includes('drive.google.com/file/d/')) { try { const id = url.split('/d/')[1].split('/')[0]; return `https://lh3.googleusercontent.com/d/${id}`; } catch(e) { return url; } } return url; }
-        function toBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); }); }
-        
+
+        function getImgUrl(url) {
+            if (!url || url.length < 5) return 'https://via.placeholder.com/150';
+            if (url.includes('drive.google.com/file/d/')) {
+                try {
+                    const id = url.split('/d/')[1].split('/')[0];
+                    return `https://lh3.googleusercontent.com/d/${id}`;
+                } catch(e) { return url; }
+            }
+            return url;
+        }
+
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
         function switchAuthMode(mode) {
             const loginView = document.getElementById('view-auth-login');
             const registerView = document.getElementById('view-auth-register');
@@ -216,7 +273,7 @@
         async function handleRegister(e) { e.preventDefault(); const n=document.getElementById('r-nik').value, nm=document.getElementById('r-nama').value, em=document.getElementById('r-email').value, p=document.getElementById('r-pass').value; if(!em){Swal.fire('Error','Email wajib','warning');return} if(!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(p)){Swal.fire('Lemah','Min 6 karakter (huruf+angka)','warning');return} toggleLoading(true); const r=await fetchGAS({action:'register',nik:n,nama:nm,email:em,password:p}); toggleLoading(false); if(r.status==='success'){Swal.fire('Berhasil','Akun dibuat.','success');switchAuthMode('login')}else Swal.fire('Gagal',r.message,'error'); }
         function handleCredentialResponse(r) { const p=JSON.parse(atob(r.credential.split('.')[1])); toggleLoading(true); fetchGAS({action:'google_login',email:p.email}).then(res=>{toggleLoading(false); if(res.status==='success')loginSuccess(res.user); else Swal.fire('Gagal',res.message,'error')}); }
         async function forgotPassword() { const {value:i}=await Swal.fire({title:'Reset Password',input:'text',inputPlaceholder:'NIK/Email',showCancelButton:true,confirmButtonText:'Kirim',showLoaderOnConfirm:true,preConfirm:async(v)=>{try{const r=await fetchGAS({action:'forgot_password',identifier:v});if(r.status!=='success')throw new Error(r.message);return r.message}catch(e){Swal.showValidationMessage(e.message)}}}); if(i)Swal.fire('Terkirim!',i,'success'); }
-        async function changePassword() { const {value:v}=await Swal.fire({title:'Ubah Password',html:'<div class="swal-form-group"><label>Password Lama</label><input type="password" id="old" class="form-control"></div><div class="swal-form-group"><label>Password Baru</label><input type="password" id="new" class="form-control"></div>',showCancelButton:true,preConfirm:async()=>{const o=document.getElementById('old').value,n=document.getElementById('new').value; if(!o||!n)return Swal.showValidationMessage('Isi semua field'); try{const r=await fetchGAS({action:'change_password',nik:currentUser.nik,oldPass:o,newPass:n});if(r.status!=='success')throw new Error(r.message);return r.message}catch(e){Swal.showValidationMessage(e.message)}}}); if(v)Swal.fire('Sukses',v,'success'); }
+        async function changePassword() { const {value:v}=await Swal.fire({title:'Ubah Password',html:'<div class="swal-form-group"><label class="swal-form-label">Password Lama</label><input type="password" id="old-pass" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">Password Baru</label><input type="password" id="new-pass" class="form-control"></div>',showCancelButton:true,confirmButtonText:'Ubah',preConfirm:async()=>{const o=document.getElementById('old-pass').value,n=document.getElementById('new-pass').value; if(!o||!n){Swal.showValidationMessage('Isi semua field');return false} if(n.length<6){Swal.showValidationMessage('Min 6 karakter');return false} try{const r=await fetchGAS({action:'change_password',nik:currentUser.nik,oldPass:o,newPass:n});if(r.status!=='success')throw new Error(r.message);return r.message}catch(e){Swal.showValidationMessage(e.message)}}}); if(v)Swal.fire('Sukses',v,'success'); }
 
         function loginSuccess(u) { currentUser=u; sessionStorage.setItem('simpeg_user',JSON.stringify(u)); if(window.location.hash==='#admin'&&u.role!=='ADMIN'){Swal.fire('Akses Ditolak','Bukan Admin','warning');window.location.hash=''} initApp(); }
         function logout() { sessionStorage.removeItem('simpeg_user'); window.location.reload(); }
@@ -256,7 +313,7 @@
         window.addEventListener('hashchange', processCurrentHash);
 
         function navTo(page) {
-            // UI Sidebar Handling
+            // UI Sidebar Handling: Auto close on mobile
             if (window.innerWidth <= 768) { 
                 document.getElementById('sidebar').classList.remove('active'); 
                 document.getElementById('sidebar-overlay').classList.remove('active'); 
@@ -290,7 +347,7 @@
         }
 
         // --- RENDERERS ---
-        function renderProfil(c) { const p=appData.profil||{}; const url=getImgUrl(p.Foto_Profil); const l=currentUser.email_login?.toLowerCase().trim(); const pe=p.Email?.toLowerCase().trim(); const en= (pe&&l&&pe===l) ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size:0.7em"><i class="fas fa-check-circle"></i> Login OK</span>' : '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25" style="font-size:0.7em"><i class="fas fa-info-circle"></i> Kontak Saja</span>'; c.innerHTML=`<div class="card p-4"><div class="d-flex justify-content-between mb-4 border-bottom pb-3"><h4 class="fw-bold text-primary mb-0">Profil</h4><div><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi||'DRAFT'}</span><button onclick="editProfil()" class="btn btn-sm btn-primary ms-1"><i class="fas fa-edit"></i> Edit</button><button onclick="changePassword()" class="btn btn-sm btn-warning ms-1"><i class="fas fa-key"></i> Pass</button></div></div><div class="row"><div class="col-md-3 text-center mb-3"><img src="${url}" class="img-thumbnail rounded-circle mb-2" style="width:150px;height:150px;object-fit:cover"><h5 class="fw-bold">${p.Nama||'User'}</h5><p class="text-muted">${p.NIP||'-'}</p></div><div class="col-md-9"><div class="row g-3"><div class="col-md-6"><label class="small text-muted">NIK</label><p class="fw-bold">${p.NIK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Tgl Lahir</label><p class="fw-bold">${p.Tmp_Lahir||''}, ${p.Tgl_Lahir||'-'}</p></div><div class="col-md-6"><label class="small text-muted">JK</label><p class="fw-bold">${p.JK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Email</label><p class="fw-bold mb-1">${p.Email||'-'}</p>${en}</div><div class="col-md-6"><label class="small text-muted">HP</label><p class="fw-bold">${p.No_HP||'-'}</p></div><div class="col-md-12"><label class="small text-muted">Alamat</label><p class="fw-bold">${p.Alamat||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Pendidikan</label><p class="fw-bold">${p.Pendidikan||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Jabatan</label><p class="fw-bold">${p.Jabatan_Terakhir||'-'}</p></div></div></div></div></div>`; }
+        function renderProfil(c) { const p=appData.profil||{}; const url=getImgUrl(p.Foto_Profil); const l=currentUser.email_login?.toLowerCase().trim(); const pe=p.Email?.toLowerCase().trim(); const en= (pe&&l&&pe===l) ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size:0.7em"><i class="fas fa-check-circle"></i> Login OK</span>' : '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25" style="font-size:0.7em"><i class="fas fa-info-circle"></i> Kontak Saja</span>'; c.innerHTML=`<div class="card p-4"><div class="d-flex justify-content-between mb-4 border-bottom pb-3"><h4 class="fw-bold text-primary mb-0">Profil</h4><div><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi||'DRAFT'}</span><button onclick="editProfil()" class="btn btn-sm btn-primary ms-1"><i class="fas fa-edit"></i> Edit</button><button onclick="changePassword()" class="btn btn-sm btn-warning ms-1"><i class="fas fa-key"></i> Pass</button></div></div><div class="row"><div class="col-md-3 text-center mb-3"><img src="${url}" class="img-thumbnail rounded-circle mb-2" style="width:150px;height:150px;object-fit:cover"><h5 class="fw-bold">${p.Nama||'User'}</h5><p class="text-muted">${p.NIP||'-'}</p></div><div class="col-md-9"><div class="row g-3"><div class="col-md-6"><label class="small text-muted">NIK</label><p class="fw-bold">${p.NIK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Tgl Lahir</label><p class="fw-bold">${p.Tmp_Lahir||''}, ${p.Tgl_Lahir||'-'}</p></div><div class="col-md-6"><label class="small text-muted">JK</label><p class="fw-bold">${p.JK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Email Kontak</label><p class="fw-bold mb-1">${p.Email||'-'}</p>${en}</div><div class="col-md-6"><label class="small text-muted">HP</label><p class="fw-bold">${p.No_HP||'-'}</p></div><div class="col-md-12"><label class="small text-muted">Alamat</label><p class="fw-bold">${p.Alamat||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Pendidikan</label><p class="fw-bold">${p.Pendidikan||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Jabatan</label><p class="fw-bold">${p.Jabatan_Terakhir||'-'}</p></div></div></div></div></div>`; }
         
         async function editProfil() { const p=appData.profil||{}; try{const {value:v}=await Swal.fire({title:'Edit Profil',width:'600px',showCancelButton:true,confirmButtonText:'Simpan',html:`<div class="swal-form-group"><label class="swal-form-label">NIK (Tetap)</label><input id="sw-nip" class="form-control bg-light" value="${p.NIK||''}" readonly></div><div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="sw-nama" class="form-control" value="${p.Nama||''}"></div><div class="d-flex gap-2 mb-2"><div class="w-50"><input id="sw-tmp" class="form-control" placeholder="Tmp Lahir" value="${p.Tmp_Lahir||''}"></div><div class="w-50"><input id="sw-tgl" class="form-control" type="date" value="${p.Tgl_Lahir||''}"></div></div><div class="swal-form-group"><label class="swal-form-label">Jenis Kelamin</label><select id="sw-jk" class="form-select"><option value="L" ${p.JK=='L'?'selected':''}>Laki-laki</option><option value="P" ${p.JK=='P'?'selected':''}>Perempuan</option></select></div><div class="swal-form-group"><label class="swal-form-label">Email Kontak</label><input id="sw-email" class="form-control" value="${p.Email||''}"><small class="text-muted">*Tidak ubah login.</small></div><div class="swal-form-group"><label class="swal-form-label">HP</label><input id="sw-hp" class="form-control" value="${p.No_HP||''}"></div><div class="swal-form-group"><label class="swal-form-label">Alamat</label><input id="sw-alamat" class="form-control" value="${p.Alamat||''}"></div><div class="swal-form-group"><label class="swal-form-label">Pendidikan</label><input id="sw-pend" class="form-control" value="${p.Pendidikan||''}"></div><div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="sw-jab" class="form-control" value="${p.Jabatan_Terakhir||''}"></div><div class="swal-form-group"><label class="swal-form-label">Foto</label><input type="file" id="sw-foto" class="form-control"></div>`, preConfirm:async()=>{const f=document.getElementById('sw-foto').files[0]; let url=p.Foto_Profil; if(f){const b64=await toBase64(f); const r=await fetchGAS({action:'upload_file',base64:b64.split(',')[1],mimeType:f.type,nik:currentUser.nik,type:'FOTO'}); if(r.status==='success')url=r.url;} return{Nama:document.getElementById('sw-nama').value,Tmp_Lahir:document.getElementById('sw-tmp').value,Tgl_Lahir:document.getElementById('sw-tgl').value,JK:document.getElementById('sw-jk').value,Email:document.getElementById('sw-email').value,No_HP:document.getElementById('sw-hp').value,Alamat:document.getElementById('sw-alamat').value,Pendidikan:document.getElementById('sw-pend').value,Jabatan_Terakhir:document.getElementById('sw-jab').value,Foto_Profil:url};}}); if(v)saveData('tb_profil',v);}catch(e){Swal.fire('Error','Gagal','error')}}
 
@@ -309,7 +366,6 @@
         function filtM() { const v=document.getElementById('sm').value.toLowerCase(); document.querySelectorAll('#tb-m tr').forEach(r=>{r.style.display=r.innerText.toLowerCase().includes(v)?'':'none'}); }
         function showDU(s) { const p=JSON.parse(decodeURIComponent(s)); Swal.fire({title:'Detail',html:`<div class="text-start">Nama: ${p.Nama}<br>NIK: ${p.NIK}<br>HP: ${p.No_HP}</div>`}); }
         
-        // ADMIN EDIT USER & ARSIP
         async function editUA(s) { const p=JSON.parse(decodeURIComponent(s)); const {value:v}=await Swal.fire({title:'Edit Pegawai',html:`<div class="swal-form-group"><label class="swal-form-label">NIK (Tetap)</label><input id="ea-nik" class="form-control bg-light" value="${p.NIK}" readonly></div><div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="ea-nama" class="form-control" value="${p.Nama||''}"></div><div class="swal-form-group"><label class="swal-form-label">NIP</label><input id="ea-nip" class="form-control" value="${p.NIP||''}"></div><div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="ea-jab" class="form-control" value="${p.Jabatan_Terakhir||''}"></div><div class="swal-form-group"><label class="swal-form-label">Unit</label><input id="ea-unit" class="form-control" value="${p.Unit_Kerja||''}"></div>`,showCancelButton:true,preConfirm:()=>{return{NIK:document.getElementById('ea-nik').value,Nama:document.getElementById('ea-nama').value,NIP:document.getElementById('ea-nip').value,Jabatan_Terakhir:document.getElementById('ea-jab').value,Unit_Kerja:document.getElementById('ea-unit').value}}}); if(v)saveData('tb_profil',v,null,p.NIK); }
 
         function loadAAr() { document.getElementById('ac').innerHTML=`<div class="d-flex gap-2 mb-3"><select id="sat" class="form-select w-auto"><option value="tb_pangkat">Pangkat</option><option value="tb_jabatan">Jabatan</option><option value="tb_keluarga">Keluarga</option><option value="tb_kartu">Kartu</option></select><button class="btn btn-primary" onclick="fAD()">Muat</button></div><div id="adc"></div>`; fAD(); }
