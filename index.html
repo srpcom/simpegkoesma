@@ -37,7 +37,8 @@
         
         /* Admin Styles */
         .table-admin th { background-color: #f8f9fa; font-size: 0.85rem; text-transform: uppercase; }
-        .nav-tabs .nav-link.active { border-bottom: 3px solid var(--primary); color: var(--primary); font-weight: bold; }
+        .nav-tabs .nav-link { cursor: pointer; color: #6c757d; }
+        .nav-tabs .nav-link.active { border-bottom: 3px solid var(--primary); color: var(--primary); font-weight: bold; border-top: none; border-left: none; border-right: none; }
 
         /* Login Styling */
         .login-wrapper { min-height: 100vh; background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%); display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -156,7 +157,7 @@
             return url;
         }
 
-        // [HELPER] BASE64 CONVERTER (HOISTED)
+        // [HELPER] BASE64 CONVERTER
         function toBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -272,7 +273,6 @@
                 </div>`;
         }
 
-        // [FIXED] FUNGSI EDIT PROFIL LEBIH ROBUST
         async function editProfil() {
             const p = appData.profil || {};
             try {
@@ -310,17 +310,50 @@
             }
         }
 
-        // --- ADMIN RENDERERS ---
+        // --- ADMIN RENDERERS V2 ---
         function renderAdminDashboardV2(container) {
             container.innerHTML = `
                 <div class="card p-4">
                     <h3 class="fw-bold mb-4 text-primary"><i class="fas fa-user-shield"></i> Admin Dashboard</h3>
-                    <ul class="nav nav-tabs mb-4"><li class="nav-item"><button class="nav-link active" onclick="loadAdminAntrean()">Antrean</button></li><li class="nav-item"><button class="nav-link" onclick="loadAdminMaster()">Master Pegawai</button></li><li class="nav-item"><button class="nav-link" onclick="loadAdminArsipTable()">Arsip Data</button></li></ul>
-                    <div id="admin-content" class="mt-3"></div>
+                    
+                    <ul class="nav nav-tabs mb-4">
+                        <li class="nav-item">
+                            <button class="nav-link active" onclick="switchAdminTab('antrean')">Antrean Verifikasi</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" onclick="switchAdminTab('master')">Master Data Pegawai</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" onclick="switchAdminTab('arsip')">Arsip Data</button>
+                        </li>
+                    </ul>
+
+                    <div id="admin-content"></div>
                 </div>`;
-            loadAdminAntrean();
+            // Default load
+            switchAdminTab('antrean');
         }
 
+        function switchAdminTab(tabName) {
+            // Update Active UI
+            const tabs = document.querySelectorAll('#adminTabs button, .nav-tabs button');
+            tabs.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.innerText.toLowerCase().includes(tabName) || 
+                   (tabName === 'antrean' && btn.innerText.includes('Antrean')) ||
+                   (tabName === 'master' && btn.innerText.includes('Master')) ||
+                   (tabName === 'arsip' && btn.innerText.includes('Arsip'))) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Load Content
+            if (tabName === 'antrean') loadAdminAntrean();
+            else if (tabName === 'master') loadAdminMaster();
+            else if (tabName === 'arsip') loadAdminArsipView();
+        }
+
+        // --- ADMIN: ANTREAN ---
         async function loadAdminAntrean() {
             const content = document.getElementById('admin-content');
             content.innerHTML = '<div class="spinner-border text-primary"></div>';
@@ -343,6 +376,7 @@
             container.innerHTML = hasData ? html : '<div class="text-center py-5 text-muted">Tidak ada antrean.</div>';
         }
 
+        // --- ADMIN: MASTER ---
         async function loadAdminMaster() {
             const container = document.getElementById('admin-content');
             container.innerHTML = '<div class="spinner-border text-primary"></div>';
@@ -353,10 +387,62 @@
             }
         }
 
-        async function loadAdminArsipTable() {
-            document.getElementById('admin-content').innerHTML = '<div class="alert alert-info">Pilih Tipe Arsip di Tab (Fitur lengkap di versi full)</div>';
+        // --- ADMIN: ARSIP (FIXED) ---
+        function loadAdminArsipView() {
+            const container = document.getElementById('admin-content');
+            container.innerHTML = `
+                <div class="d-flex gap-3 mb-3 align-items-center p-3 bg-light rounded border">
+                    <label class="fw-bold">Pilih Data:</label>
+                    <select id="arsip-type" class="form-select w-auto">
+                        <option value="tb_pangkat">Riwayat Pangkat</option>
+                        <option value="tb_jabatan">Riwayat Jabatan</option>
+                        <option value="tb_keluarga">Anggota Keluarga</option>
+                        <option value="tb_kartu">Kartu Identitas</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="fetchArsipData()"><i class="fas fa-sync"></i> Muat Data</button>
+                </div>
+                <div id="arsip-data-container" class="table-responsive">
+                    <div class="text-center text-muted p-4">Silakan pilih jenis data dan klik Muat Data.</div>
+                </div>
+            `;
+            // Auto load first option
+            fetchArsipData();
         }
 
+        async function fetchArsipData() {
+            const tableType = document.getElementById('arsip-type').value;
+            const dataContainer = document.getElementById('arsip-data-container');
+            
+            dataContainer.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary"></div></div>';
+            
+            const res = await fetchGAS({ action: 'admin_get_table', table: tableType });
+            if(res.status === 'success') {
+                const data = res.data;
+                if(data.length === 0) {
+                    dataContainer.innerHTML = '<div class="alert alert-warning">Tidak ada data ditemukan.</div>';
+                    return;
+                }
+                
+                // Dynamic Table Generation
+                const headers = Object.keys(data[0]).filter(k => k !== 'ID' && k !== 'Link_File' && k !== 'Status_Verifikasi');
+                let thead = '<tr><th>No</th>' + headers.map(h => `<th>${h}</th>`).join('') + '<th>File</th><th>Status</th></tr>';
+                let tbody = '';
+                
+                data.forEach((row, idx) => {
+                    let cells = headers.map(h => `<td>${row[h] || '-'}</td>`).join('');
+                    let fileBtn = row.Link_File ? `<a href="${row.Link_File}" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-file"></i></a>` : '-';
+                    let badgeClass = row.Status_Verifikasi === 'VERIFIED' ? 'success' : 'warning';
+                    let statusBadge = `<span class="badge bg-${badgeClass}">${row.Status_Verifikasi}</span>`;
+                    tbody += `<tr><td>${idx+1}</td>${cells}<td>${fileBtn}</td><td>${statusBadge}</td></tr>`;
+                });
+                
+                dataContainer.innerHTML = `<table class="table table-sm table-bordered table-hover mt-2"><thead class="table-light">${thead}</thead><tbody>${tbody}</tbody></table>`;
+            } else {
+                dataContainer.innerHTML = `<div class="alert alert-danger">Gagal memuat data: ${res.message}</div>`;
+            }
+        }
+
+        // --- HELPER FUNCTIONS ---
         function toggleSelectAll(tId, src) { document.querySelectorAll(`.cb-${tId}`).forEach(c => c.checked = src.checked); updateVerifyBtn(tId); }
         function updateVerifyBtn(tId) { const c = document.querySelectorAll(`.cb-${tId}:checked`).length; document.getElementById(`btn-verify-${tId}`).disabled = c === 0; }
         async function execBulkVerify(tId) {
