@@ -7,26 +7,54 @@
     <!-- Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts: Poppins for elegance -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <style>
-        :root { --primary: #005A9C; --secondary: #004080; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; }
+        /* --- THEME CONFIGURATION: GREEN GLASS BATIK --- */
+        :root { 
+            --primary: #047857; /* Emerald 700 */
+            --primary-dark: #064e3b; /* Emerald 900 */
+            --primary-light: #10b981; /* Emerald 500 */
+            --accent: #d1fae5; /* Emerald 100 */
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.2);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            --text-on-glass: #ffffff;
+            --text-muted-on-glass: #d1fae5;
+        }
         
-        /* Layout Sidebar */
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: #f0fdf4; /* Very light green fallback */
+            color: #333;
+        }
+        
+        /* --- LAYOUT SIDEBAR (Glass Effect) --- */
         .sidebar { 
-            min-height: 100vh; width: 260px; background: var(--primary); color: white; 
+            min-height: 100vh; width: 260px; 
+            background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary) 100%);
+            color: white; 
             position: fixed; transition: all 0.3s; z-index: 1050; 
             left: 0; 
+            box-shadow: 4px 0 15px rgba(0,0,0,0.1);
         }
         .sidebar.collapsed { left: -260px; } 
 
         .sidebar .nav-link { 
-            color: rgba(255,255,255,0.8); margin: 5px 15px; border-radius: 8px; font-weight: 500; 
+            color: rgba(255,255,255,0.85); margin: 8px 15px; border-radius: 10px; font-weight: 500; 
             cursor: pointer; position: relative; z-index: 1051;
+            transition: all 0.3s ease;
         }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active { background: rgba(255,255,255,0.15); color: white; transform: translateX(5px); }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { 
+            background: rgba(255, 255, 255, 0.2); 
+            color: #fff; 
+            transform: translateX(5px); 
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
         .sidebar .nav-link i { width: 25px; }
         
         .main-content { margin-left: 260px; padding: 25px; transition: all 0.3s; }
@@ -35,7 +63,7 @@
         /* Mobile Overlay */
         .sidebar-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 1040;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); z-index: 1040;
         }
         .sidebar-overlay.active { display: block; }
 
@@ -47,47 +75,124 @@
             .main-content.expanded { margin-left: 0; }
         }
 
-        /* Styling */
-        .swal2-popup { font-size: 0.9rem !important; border-radius: 12px !important; padding: 1.5em !important; }
-        .swal2-title { font-size: 1.4rem !important; font-weight: 700 !important; color: #333 !important; }
-        .swal2-html-container { font-size: 0.95rem !important; color: #555 !important; text-align: left !important; }
+        /* --- SWEETALERT2 CUSTOMIZATION (Green Theme) --- */
+        .swal2-popup { font-size: 0.9rem !important; border-radius: 15px !important; padding: 1.5em !important; border: 1px solid var(--accent); }
+        .swal2-title { font-size: 1.4rem !important; font-weight: 700 !important; color: var(--primary-dark) !important; }
+        .swal2-confirm { background-color: var(--primary) !important; box-shadow: 0 4px 6px rgba(4, 120, 87, 0.4) !important; }
         .swal-form-group { text-align: left; margin-bottom: 1rem; }
-        .swal-form-label { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem; display: block; color: #444; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s; }
-        .status-badge-DRAFT { background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; border: 1px solid #ffeeba; }
-        .status-badge-VERIFIED { background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; border: 1px solid #c3e6cb; }
-        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; }
-        .table-admin th { background-color: #f8f9fa; font-size: 0.85rem; text-transform: uppercase; }
-        .nav-tabs .nav-link { cursor: pointer; color: #6c757d; }
-        .nav-tabs .nav-link.active { border-bottom: 3px solid var(--primary); color: var(--primary); font-weight: bold; border-top: none; border-left: none; border-right: none; }
+        .swal-form-label { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem; display: block; color: var(--primary-dark); }
+
+        /* --- COMPONENTS --- */
+        .card { border: none; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); transition: transform 0.2s; }
         
-        .login-wrapper { min-height: 100vh; background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%); display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .login-card-modern { background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); width: 100%; max-width: 420px; padding: 40px; position: relative; overflow: hidden; }
-        .login-card-modern::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+        /* Badges */
+        .status-badge-DRAFT { background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; padding: 5px 12px; border-radius: 20px; font-size: 0.75em; font-weight: 700; letter-spacing: 0.5px; }
+        .status-badge-VERIFIED { background: #ecfdf5; color: #047857; border: 1px solid #d1fae5; padding: 5px 12px; border-radius: 20px; font-size: 0.75em; font-weight: 700; letter-spacing: 0.5px; }
+        
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); backdrop-filter: blur(5px); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        .table-admin th { background-color: #f0fdf4; color: var(--primary-dark); font-size: 0.85rem; text-transform: uppercase; font-weight: 700; border-bottom: 2px solid var(--primary-light); }
+        
+        /* Tabs */
+        .nav-tabs .nav-link { cursor: pointer; color: #64748b; font-weight: 500; border: none; background: transparent; }
+        .nav-tabs .nav-link.active { color: var(--primary); font-weight: 700; border-bottom: 3px solid var(--primary); background: transparent; }
+        
+        /* --- LOGIN STYLING (GREEN GLASS BATIK) --- */
+        .login-wrapper { 
+            min-height: 100vh; 
+            /* Green Gradient + Batik Pattern Overlay */
+            background-color: var(--primary-dark);
+            background-image: 
+                linear-gradient(135deg, rgba(6, 78, 59, 0.9) 0%, rgba(16, 185, 129, 0.8) 100%),
+                url("https://www.transparenttextures.com/patterns/batik.png"); /* Batik Pattern Texture */
+            background-size: cover, auto;
+            background-blend-mode: multiply;
+            display: flex; align-items: center; justify-content: center; padding: 20px; 
+        }
+
+        .login-card-modern { 
+            /* Glassmorphism Effect */
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            
+            border-radius: 24px; 
+            width: 100%; max-width: 420px; 
+            padding: 45px; 
+            position: relative; 
+            overflow: hidden; 
+            color: var(--text-on-glass);
+        }
+        
+        /* Elegant Accent Line */
+        .login-card-modern::before { 
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 6px; 
+            background: linear-gradient(90deg, #34d399, #059669); 
+        }
+
         .login-header { text-align: center; margin-bottom: 35px; }
-        .login-header img { width: 80px; margin-bottom: 15px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
-        .login-header h4 { font-weight: 800; color: #2d3748; letter-spacing: -0.5px; margin-bottom: 5px; }
-        .login-header p { color: #718096; font-size: 0.9rem; }
-        .form-modern .form-label { font-size: 0.85rem; font-weight: 600; color: #4a5568; margin-left: 4px; }
-        .form-modern .form-control { padding: 12px 18px; border-radius: 10px; border: 1px solid #e2e8f0; background-color: #f7fafc; font-size: 0.95rem; transition: all 0.3s ease; }
-        .form-modern .form-control:focus { background-color: white; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 90, 156, 0.15); }
-        .btn-primary-modern { background: var(--primary); background: linear-gradient(to right, var(--primary), var(--secondary)); border: none; color: white; padding: 12px; border-radius: 10px; font-weight: 700; letter-spacing: 0.5px; width: 100%; margin-top: 10px; transition: transform 0.2s, box-shadow 0.2s; }
-        .btn-primary-modern:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0, 90, 156, 0.3); color: white; }
-        .auth-separator { display: flex; align-items: center; text-align: center; color: #cbd5e0; margin: 25px 0; }
-        .auth-separator::before, .auth-separator::after { content: ''; flex: 1; border-bottom: 1px solid #e2e8f0; }
-        .auth-separator span { padding: 0 10px; font-size: 0.75rem; font-weight: 600; color: #a0aec0; }
-        .auth-footer { text-align: center; margin-top: 25px; font-size: 0.9rem; color: #718096; }
-        .auth-footer a { color: var(--primary); font-weight: 700; text-decoration: none; cursor: pointer; transition: color 0.2s; }
-        .auth-footer a:hover { color: var(--secondary); text-decoration: underline; }
-        .animate-fade { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .login-header img { width: 90px; margin-bottom: 15px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; padding: 5px; background: rgba(255,255,255,0.1); }
+        .login-header h4 { font-weight: 700; color: #fff; letter-spacing: 1px; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .login-header p { color: var(--text-muted-on-glass); font-size: 0.9rem; font-weight: 300; }
+        
+        /* Form Inputs on Glass */
+        .form-modern .form-label { font-size: 0.85rem; font-weight: 600; color: #f0fdf4; margin-left: 4px; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        .form-modern .form-control { 
+            padding: 12px 18px; 
+            border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.3); 
+            background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white input */
+            font-size: 0.95rem; 
+            transition: all 0.3s ease; 
+            color: #064e3b;
+        }
+        .form-modern .form-control:focus { 
+            background-color: #fff; 
+            border-color: #34d399; 
+            box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.2); 
+            outline: none;
+        }
+        .form-modern .form-control::placeholder { color: #9ca3af; }
+
+        /* Buttons */
+        .btn-primary-modern { 
+            background: linear-gradient(135deg, #10b981, #047857); 
+            border: none; 
+            color: white; 
+            padding: 14px; 
+            border-radius: 12px; 
+            font-weight: 600; 
+            letter-spacing: 0.5px; 
+            width: 100%; 
+            margin-top: 15px; 
+            transition: transform 0.2s, box-shadow 0.2s; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .btn-primary-modern:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 10px 15px rgba(6, 78, 59, 0.4); 
+            color: white;
+            background: linear-gradient(135deg, #34d399, #059669); 
+        }
+
+        .auth-separator { display: flex; align-items: center; text-align: center; color: rgba(255,255,255,0.5); margin: 25px 0; font-size: 0.75rem; font-weight: 500; letter-spacing: 1px; }
+        .auth-separator::before, .auth-separator::after { content: ''; flex: 1; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .auth-separator span { padding: 0 10px; }
+        
+        .auth-footer { text-align: center; margin-top: 25px; font-size: 0.9rem; color: var(--text-muted-on-glass); }
+        .auth-footer a { color: #fff; font-weight: 700; text-decoration: none; cursor: pointer; border-bottom: 1px dashed rgba(255,255,255,0.5); transition: all 0.2s; }
+        .auth-footer a:hover { color: #34d399; border-bottom-color: #34d399; }
+
+        .animate-fade { animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
     <div id="loading" class="loading-overlay">
-        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
-        <h5 class="mt-3 text-primary fw-bold">Memproses Data...</h5>
+        <div class="spinner-border text-success" style="width: 3rem; height: 3rem;"></div>
+        <h5 class="mt-3 text-success fw-bold">Memproses Data...</h5>
     </div>
 
     <!-- LOGIN SECTION -->
@@ -102,20 +207,23 @@
             <!-- VIEW: LOGIN FORM -->
             <div id="view-auth-login">
                 <form onsubmit="handleLogin(event)" class="form-modern">
-                    <div class="mb-3"><label class="form-label">NIK atau Email</label><input type="text" id="l-identifier" class="form-control" placeholder="Masukkan NIK atau Email Anda" required></div>
+                    <div class="mb-3">
+                        <label class="form-label">NIK atau Email</label>
+                        <input type="text" id="l-identifier" class="form-control" placeholder="Masukkan NIK atau Email" required>
+                    </div>
                     <div class="mb-2">
                         <label class="form-label">Kata Sandi</label>
                         <div class="position-relative">
                             <input type="password" id="l-pass" class="form-control" placeholder="••••••••" required style="padding-right: 45px;">
-                            <span class="position-absolute top-50 end-0 translate-middle-y me-3" onclick="togglePassword('l-pass', this)" style="cursor: pointer; color: #6c757d;">
+                            <span class="position-absolute top-50 end-0 translate-middle-y me-3" onclick="togglePassword('l-pass', this)" style="cursor: pointer; color: #047857;">
                                 <i class="fas fa-eye"></i>
                             </span>
                         </div>
                     </div>
-                    <div class="text-end mb-4"><a href="#" onclick="forgotPassword()" class="text-decoration-none small text-primary fw-bold">Lupa Password?</a></div>
-                    <button type="submit" class="btn-primary-modern">Masuk Aplikasi</button>
+                    <div class="text-end mb-4"><a href="#" onclick="forgotPassword()" class="text-decoration-none small text-white opacity-75 hover-opacity-100">Lupa Password?</a></div>
+                    <button type="submit" class="btn-primary-modern">MASUK APLIKASI</button>
                 </form>
-                <div class="auth-separator"><span>ATAU MASUK DENGAN</span></div>
+                <div class="auth-separator"><span>ATAU</span></div>
                 <div class="d-flex justify-content-center">
                     <div id="g_id_onload" data-client_id="783459415718-mp0vsmd2lopajf2ut0aqc6drjrs95pu8.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
                     <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="outline" data-text="signin_with" data-size="large" data-logo_alignment="left" data-width="340"></div>
@@ -128,19 +236,19 @@
                 <form onsubmit="handleRegister(event)" class="form-modern">
                     <div class="mb-3"><label class="form-label">NIK (Sesuai KTP)</label><input type="number" id="r-nik" class="form-control" placeholder="16 Digit NIK" required minlength="16"></div>
                     <div class="mb-3"><label class="form-label">Nama Lengkap</label><input type="text" id="r-nama" class="form-control" placeholder="Nama Lengkap Tanpa Gelar" required></div>
-                    <div class="mb-3"><label class="form-label">Email (Wajib / Gmail)</label><input type="email" id="r-email" class="form-control" placeholder="contoh@gmail.com" required><div class="form-text text-muted" style="font-size: 0.8rem;">Digunakan untuk login & reset password.</div></div>
+                    <div class="mb-3"><label class="form-label">Email (Wajib / Gmail)</label><input type="email" id="r-email" class="form-control" placeholder="contoh@gmail.com" required><div class="text-white opacity-75 small mt-1" style="font-size: 0.75rem;">Digunakan untuk login & reset password.</div></div>
                     
                     <div class="mb-4">
                         <label class="form-label">Buat Kata Sandi</label>
                         <div class="position-relative">
                             <input type="password" id="r-pass" class="form-control" placeholder="Min. 6 Karakter" required minlength="6" style="padding-right: 45px;">
-                            <span class="position-absolute top-50 end-0 translate-middle-y me-3" onclick="togglePassword('r-pass', this)" style="cursor: pointer; color: #6c757d;">
+                            <span class="position-absolute top-50 end-0 translate-middle-y me-3" onclick="togglePassword('r-pass', this)" style="cursor: pointer; color: #047857;">
                                 <i class="fas fa-eye"></i>
                             </span>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-primary-modern" style="background: linear-gradient(to right, #198754, #157347);">Daftar Akun Baru</button>
+                    <button type="submit" class="btn-primary-modern">DAFTAR AKUN</button>
                 </form>
                 <div class="auth-footer">Sudah punya akun? <a onclick="switchAuthMode('login')">Masuk disini</a></div>
             </div>
@@ -157,8 +265,8 @@
         <div class="sidebar d-flex flex-column p-3" id="sidebar">
             <div class="d-flex justify-content-between align-items-center mb-4 text-white">
                 <div class="text-center w-100">
-                    <img src="https://raw.githubusercontent.com/srpcom/koesmaparkir/main/new%20logo%20rsud%202025%20kecil.png" width="50" class="bg-white rounded-circle p-1 mb-2">
-                    <h6 class="fw-bold mb-0">SIMPEG RSUD</h6>
+                    <img src="https://raw.githubusercontent.com/srpcom/koesmaparkir/main/new%20logo%20rsud%202025%20kecil.png" width="50" class="bg-white rounded-circle p-1 mb-2 shadow-sm">
+                    <h6 class="fw-bold mb-0 text-white">SIMPEG RSUD</h6>
                     <small id="user-display-name" class="text-white-50">User</small>
                 </div>
                 <!-- Tombol Close Sidebar (Mobile Only) -->
@@ -168,19 +276,19 @@
             </div>
             
             <ul class="nav flex-column mb-auto">
-                <li class="nav-item"><a class="nav-link active" onclick="navTo('profil')" style="cursor: pointer;"><i class="fas fa-user-circle"></i> Profil Pegawai</a></li>
-                <li class="nav-item"><a class="nav-link" onclick="navTo('pangkat')" style="cursor: pointer;"><i class="fas fa-medal"></i> Riwayat Pangkat</a></li>
-                <li class="nav-item"><a class="nav-link" onclick="navTo('jabatan')" style="cursor: pointer;"><i class="fas fa-briefcase"></i> Riwayat Jabatan</a></li>
-                <li class="nav-item"><a class="nav-link" onclick="navTo('keluarga')" style="cursor: pointer;"><i class="fas fa-users"></i> Anggota Keluarga</a></li>
-                <li class="nav-item"><a class="nav-link" onclick="navTo('kartu')" style="cursor: pointer;"><i class="fas fa-id-card"></i> Data Kartu</a></li>
-                <li class="nav-item d-none" id="menu-admin"><a class="nav-link bg-danger text-white mt-3" onclick="navTo('admin')" style="cursor: pointer;"><i class="fas fa-user-shield"></i> Admin Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link active" onclick="navTo('profil')" style="cursor: pointer;"><i class="fas fa-user-circle me-2"></i> Profil Pegawai</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="navTo('pangkat')" style="cursor: pointer;"><i class="fas fa-medal me-2"></i> Riwayat Pangkat</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="navTo('jabatan')" style="cursor: pointer;"><i class="fas fa-briefcase me-2"></i> Riwayat Jabatan</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="navTo('keluarga')" style="cursor: pointer;"><i class="fas fa-users me-2"></i> Anggota Keluarga</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="navTo('kartu')" style="cursor: pointer;"><i class="fas fa-id-card me-2"></i> Data Kartu</a></li>
+                <li class="nav-item d-none" id="menu-admin"><a class="nav-link bg-white text-success mt-3 shadow-sm" onclick="navTo('admin')" style="cursor: pointer;"><i class="fas fa-user-shield me-2"></i> Admin Dashboard</a></li>
             </ul>
-            <div class="mt-auto"><button onclick="logout()" class="btn btn-outline-light w-100"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
+            <div class="mt-auto"><button onclick="logout()" class="btn btn-outline-light w-100"><i class="fas fa-sign-out-alt me-2"></i> Logout</button></div>
         </div>
 
         <!-- Content -->
         <div class="main-content" id="main-content">
-            <button class="btn btn-primary d-md-none mb-3" onclick="toggleSidebar()"><i class="fas fa-bars"></i> Menu</button>
+            <button class="btn btn-success d-md-none mb-3 shadow-sm" onclick="toggleSidebar()"><i class="fas fa-bars"></i> Menu</button>
             <div id="view-container"></div>
         </div>
     </div>
@@ -212,7 +320,7 @@
         function formatDateDisplay(d) { if(!d) return '-'; const date = new Date(d); if(isNaN(date.getTime())) return d; const day = String(date.getDate()).padStart(2, '0'); const month = String(date.getMonth() + 1).padStart(2, '0'); const year = date.getFullYear(); return `${day}-${month}-${year}`; }
         function switchAuthMode(mode) { const l=document.getElementById('view-auth-login'); const r=document.getElementById('view-auth-register'); if(mode==='register'){l.classList.add('d-none');r.classList.remove('d-none');r.classList.add('animate-fade')}else{r.classList.add('d-none');l.classList.remove('d-none');l.classList.add('animate-fade')} }
 
-        // --- AUTH ---
+        // --- AUTH API CALLS ---
         async function handleLogin(e) { e.preventDefault(); const i=document.getElementById('l-identifier').value, p=document.getElementById('l-pass').value; toggleLoading(true); const r=await fetchGAS({action:'login',identifier:i,password:p}); toggleLoading(false); if(r.status==='success') loginSuccess(r.user); else Swal.fire('Gagal',r.message,'error'); }
         async function handleRegister(e) { e.preventDefault(); const n=document.getElementById('r-nik').value, nm=document.getElementById('r-nama').value, em=document.getElementById('r-email').value, p=document.getElementById('r-pass').value; if(!em){Swal.fire('Error','Email wajib','warning');return} if(!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(p)){Swal.fire('Lemah','Min 6 karakter (huruf+angka)','warning');return} toggleLoading(true); const r=await fetchGAS({action:'register',nik:n,nama:nm,email:em,password:p}); toggleLoading(false); if(r.status==='success'){Swal.fire('Berhasil','Akun dibuat.','success');switchAuthMode('login')}else Swal.fire('Gagal',r.message,'error'); }
         function handleCredentialResponse(r) { const p=JSON.parse(atob(r.credential.split('.')[1])); toggleLoading(true); fetchGAS({action:'google_login',email:p.email}).then(res=>{toggleLoading(false); if(res.status==='success')loginSuccess(res.user); else Swal.fire('Gagal',res.message,'error')}); }
@@ -271,7 +379,6 @@
             
             const container = document.getElementById('view-container');
             if(page==='profil') renderProfil(container);
-            // [FIX] Changed renderTable call signature to handle undefined data safely inside the function
             else if(page==='pangkat') renderTable(container,'Riwayat Pangkat','tb_pangkat');
             else if(page==='jabatan') renderTable(container,'Riwayat Jabatan','tb_jabatan');
             else if(page==='keluarga') renderTable(container,'Anggota Keluarga','tb_keluarga');
@@ -280,7 +387,6 @@
         }
 
         function renderTable(c,t,tn) { 
-            // [FIX] Safely get data or default to empty array
             const d = appData[tn] || []; 
             let h=''; 
             if(d.length > 0) {
@@ -296,9 +402,100 @@
         }
 
         // ... (Functions addData, saveData, deleteData same as before) ...
-        function renderProfil(c) { const p=appData.profil||{}; const url=getImgUrl(p.Foto_Profil); const l=currentUser.email_login?.toLowerCase().trim(); const pe=p.Email?.toLowerCase().trim(); const en= (pe&&l&&pe===l) ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size:0.7em"><i class="fas fa-check-circle"></i> Login OK</span>' : '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25" style="font-size:0.7em"><i class="fas fa-info-circle"></i> Kontak Saja</span>'; const ft=formatDateDisplay(p.Tgl_Lahir); c.innerHTML=`<div class="card p-4"><div class="d-flex justify-content-between mb-4 border-bottom pb-3"><h4 class="fw-bold text-primary mb-0">Profil Pegawai</h4><div><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi||'DRAFT'}</span><button onclick="editProfil()" class="btn btn-sm btn-primary ms-1"><i class="fas fa-edit"></i> Edit</button><button onclick="changePassword()" class="btn btn-sm btn-warning ms-1"><i class="fas fa-key"></i> Pass</button></div></div><div class="row"><div class="col-md-3 text-center mb-3"><img src="${url}" class="img-thumbnail rounded-circle mb-2" style="width:150px;height:150px;object-fit:cover"><h5 class="fw-bold">${p.Nama||'Nama Pegawai'}</h5><p class="text-muted">${p.NIP||'-'}</p></div><div class="col-md-9"><div class="row g-3"><div class="col-md-6"><label class="small text-muted">NIK</label><p class="fw-bold">${p.NIK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">NIP</label><p class="fw-bold">${p.NIP||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Tgl Lahir</label><p class="fw-bold">${p.Tmp_Lahir||''}, ${ft}</p></div><div class="col-md-6"><label class="small text-muted">JK</label><p class="fw-bold">${p.JK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Email Kontak</label><p class="fw-bold mb-1">${p.Email||'-'}</p>${en}</div><div class="col-md-6"><label class="small text-muted">HP</label><p class="fw-bold">${p.No_HP||'-'}</p></div><div class="col-md-12"><label class="small text-muted">Alamat</label><p class="fw-bold">${p.Alamat||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Pendidikan</label><p class="fw-bold">${p.Pendidikan||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Jabatan</label><p class="fw-bold">${p.Jabatan_Terakhir||'-'}</p></div></div></div></div></div>`; }
-        async function editProfil() { const p=appData.profil||{}; try{const {value:v}=await Swal.fire({title:'Edit Profil',width:'600px',showCancelButton:true,confirmButtonText:'Simpan',html:`<div class="swal-form-group"><label class="swal-form-label">NIK (Tetap)</label><input id="sw-real-nik" class="form-control bg-light" value="${p.NIK||''}" readonly></div><div class="swal-form-group"><label class="swal-form-label">NIP</label><input id="sw-nip" class="form-control" value="${p.NIP||''}"></div><div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="sw-nama" class="form-control" value="${p.Nama||''}"></div><div class="d-flex gap-2 mb-2"><div class="w-50"><input id="sw-tmp" class="form-control" placeholder="Tmp Lahir" value="${p.Tmp_Lahir||''}"></div><div class="w-50"><input id="sw-tgl" class="form-control" type="date" value="${p.Tgl_Lahir||''}"></div></div><div class="swal-form-group"><label class="swal-form-label">Jenis Kelamin</label><select id="sw-jk" class="form-select"><option value="L" ${p.JK=='L'?'selected':''}>Laki-laki</option><option value="P" ${p.JK=='P'?'selected':''}>Perempuan</option></select></div><div class="swal-form-group"><label class="swal-form-label">Email Kontak</label><input id="sw-email" class="form-control" value="${p.Email||''}"><small class="text-muted">*Tidak mengubah email login.</small></div><div class="swal-form-group"><label class="swal-form-label">HP</label><input id="sw-hp" class="form-control" value="${p.No_HP||''}"></div><div class="swal-form-group"><label class="swal-form-label">Alamat</label><input id="sw-alamat" class="form-control" value="${p.Alamat||''}"></div><div class="swal-form-group"><label class="swal-form-label">Pendidikan</label><input id="sw-pend" class="form-control" value="${p.Pendidikan||''}"></div><div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="sw-jab" class="form-control" value="${p.Jabatan_Terakhir||''}"></div><div class="swal-form-group"><label class="swal-form-label">Foto</label><input type="file" id="sw-foto" class="form-control"></div>`, preConfirm:async()=>{const f=document.getElementById('sw-foto').files[0]; let url=p.Foto_Profil; if(f){const b64=await toBase64(f); const r=await fetchGAS({action:'upload_file',base64:b64.split(',')[1],mimeType:f.type,nik:currentUser.nik,type:'FOTO'}); if(r.status==='success')url=r.url;} return{NIP:document.getElementById('sw-nip').value,Nama:document.getElementById('sw-nama').value,Tmp_Lahir:document.getElementById('sw-tmp').value,Tgl_Lahir:document.getElementById('sw-tgl').value,JK:document.getElementById('sw-jk').value,Email:document.getElementById('sw-email').value,No_HP:document.getElementById('sw-hp').value,Alamat:document.getElementById('sw-alamat').value,Pendidikan:document.getElementById('sw-pend').value,Jabatan_Terakhir:document.getElementById('sw-jab').value,Foto_Profil:url};}}); if(v)saveData('tb_profil',v);}catch(e){console.error(e);Swal.fire('Error','Gagal','error')}}
-        async function addData(tn) { let h=''; if(tn==='tb_pangkat')h=`<div class="swal-form-group"><label class="swal-form-label">Golongan</label><input id="f-1" class="form-control" placeholder="Contoh: III/a"></div><div class="swal-form-group"><label class="swal-form-label">Pangkat</label><input id="f-2" class="form-control" placeholder="Nama Pangkat"></div><div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="f-3" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">Tgl SK</label><input type="date" id="f-4" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="f-5" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">File SK</label><input type="file" id="f-f" class="form-control"></div>`; else if(tn==='tb_keluarga')h=`<div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="f-1" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">NIK</label><input id="f-2" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">Hubungan</label><select id="f-3" class="form-select"><option>Suami</option><option>Istri</option><option>Anak</option></select></div><div class="swal-form-group"><label class="swal-form-label">JK</label><select id="f-4" class="form-select"><option value="L">L</option><option value="P">P</option></select></div><div class="swal-form-group"><label class="swal-form-label">Tgl Lahir</label><input type="date" id="f-5" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">Tunjangan</label><select id="f-6" class="form-select"><option>Ya</option><option>Tidak</option></select></div>`; else if(tn==='tb_jabatan')h=`<div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="f-1" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="f-2" class="form-select"><option>Struktural</option><option>Fungsional</option></select></div><div class="swal-form-group"><label class="swal-form-label">Eselon</label><input id="f-3" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">Unit</label><input id="f-4" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="f-5" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="f-6" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">File SK</label><input type="file" id="f-f" class="form-control"></div>`; else if(tn==='tb_kartu')h=`<div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="f-1" class="form-select"><option>BPJS</option><option>NPWP</option><option>Karpeg</option></select></div><div class="swal-form-group"><label class="swal-form-label">Nomor</label><input id="f-2" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">Foto</label><input type="file" id="f-f" class="form-control"></div>`; const {value:v}=await Swal.fire({title:'Tambah Data',html:h,showCancelButton:true,confirmButtonText:'Simpan',customClass:{popup:'swal-wide-mobile'},preConfirm:async()=>{ const f=document.getElementById('f-f'); let url=''; if(f&&f.files[0]){const b64=await toBase64(f.files[0]); const r=await fetchGAS({action:'upload_file',base64:b64.split(',')[1],mimeType:f.files[0].type,nik:currentUser.nik,type:'DOC'}); if(r.status==='success')url=r.url;} if(tn==='tb_pangkat')return{Golongan:document.getElementById('f-1').value,Pangkat:document.getElementById('f-2').value,No_SK:document.getElementById('f-3').value,Tgl_SK:document.getElementById('f-4').value,TMT:document.getElementById('f-5').value,Link_File:url}; else if(tn==='tb_keluarga')return{Nama:document.getElementById('f-1').value,NIK_Anggota:document.getElementById('f-2').value,Hubungan:document.getElementById('f-3').value,JK:document.getElementById('f-4').value,Tgl_Lahir:document.getElementById('f-5').value,Tunjangan:document.getElementById('f-6').value}; else if(tn==='tb_jabatan')return{Nama_Jabatan:document.getElementById('f-1').value,Jenis_Jabatan:document.getElementById('f-2').value,Eselon:document.getElementById('f-3').value,Unit_Kerja:document.getElementById('f-4').value,No_SK:document.getElementById('f-5').value,TMT:document.getElementById('f-6').value,Link_File:url}; else if(tn==='tb_kartu')return{Jenis_Kartu:document.getElementById('f-1').value,No_Kartu:document.getElementById('f-2').value,Link_File:url}; }}); if(v)saveData(tn,v); }
+        function renderProfil(c) { 
+            const p=appData.profil||{}; 
+            const url=getImgUrl(p.Foto_Profil); 
+            const l=currentUser.email_login?.toLowerCase().trim(); 
+            const pe=p.Email?.toLowerCase().trim(); 
+            const en= (pe&&l&&pe===l) ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size:0.7em"><i class="fas fa-check-circle"></i> Login OK</span>' : '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25" style="font-size:0.7em"><i class="fas fa-info-circle"></i> Kontak Saja</span>'; 
+            const ft=formatDateDisplay(p.Tgl_Lahir);
+            
+            c.innerHTML=`<div class="card p-4"><div class="d-flex justify-content-between mb-4 border-bottom pb-3"><h4 class="fw-bold text-primary mb-0">Profil Pegawai</h4><div><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi||'DRAFT'}</span><button onclick="editProfil()" class="btn btn-sm btn-primary ms-1"><i class="fas fa-edit"></i> Edit</button><button onclick="changePassword()" class="btn btn-sm btn-warning ms-1"><i class="fas fa-key"></i> Pass</button></div></div><div class="row"><div class="col-md-3 text-center mb-3"><img src="${url}" class="img-thumbnail rounded-circle mb-2" style="width:150px;height:150px;object-fit:cover"><h5 class="fw-bold">${p.Nama||'Nama Pegawai'}</h5><p class="text-muted">${p.NIP||'-'}</p></div><div class="col-md-9"><div class="row g-3"><div class="col-md-6"><label class="small text-muted">NIK</label><p class="fw-bold">${p.NIK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">NIP</label><p class="fw-bold">${p.NIP||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Tgl Lahir</label><p class="fw-bold">${p.Tmp_Lahir||''}, ${ft}</p></div><div class="col-md-6"><label class="small text-muted">JK</label><p class="fw-bold">${p.JK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Email Kontak</label><p class="fw-bold mb-1">${p.Email||'-'}</p>${en}</div><div class="col-md-6"><label class="small text-muted">HP</label><p class="fw-bold">${p.No_HP||'-'}</p></div><div class="col-md-12"><label class="small text-muted">Alamat</label><p class="fw-bold">${p.Alamat||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Pendidikan</label><p class="fw-bold">${p.Pendidikan||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Jabatan</label><p class="fw-bold">${p.Jabatan_Terakhir||'-'}</p></div></div></div></div></div>`; 
+        }
+        
+        async function editProfil() { 
+            const p = appData.profil || {}; 
+            try {
+                const { value: formValues } = await Swal.fire({
+                    title: 'Edit Profil', width: '600px', showCancelButton: true, confirmButtonText: 'Simpan',
+                    html: `
+                        <div class="swal-form-group"><label class="swal-form-label">NIK (KTP) <span class="text-danger">*Kunci Data</span></label><input id="sw-real-nik" class="form-control bg-light" value="${p.NIK||''}" readonly></div>
+                        <div class="swal-form-group"><label class="swal-form-label">NIP (Nomor Induk Pegawai)</label><input id="sw-nip" class="form-control" placeholder="Masukkan NIP Baru" value="${p.NIP||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Nama Lengkap</label><input id="sw-nama" class="form-control" value="${p.Nama||''}"></div>
+                        <div class="d-flex gap-2 mb-2"><div class="w-50"><input id="sw-tmp" class="form-control" placeholder="Tmp Lahir" value="${p.Tmp_Lahir||''}"></div><div class="w-50"><input id="sw-tgl" class="form-control" type="date" value="${p.Tgl_Lahir||''}"></div></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Jenis Kelamin</label><select id="sw-jk" class="form-select"><option value="L" ${p.JK=='L'?'selected':''}>Laki-laki</option><option value="P" ${p.JK=='P'?'selected':''}>Perempuan</option></select></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Email Kontak</label><input id="sw-email" class="form-control" value="${p.Email||''}"><small class="text-muted" style="font-size:0.75rem">*Tidak mengubah email login.</small></div>
+                        <div class="swal-form-group"><label class="swal-form-label">HP</label><input id="sw-hp" class="form-control" value="${p.No_HP||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Alamat</label><input id="sw-alamat" class="form-control" value="${p.Alamat||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Pendidikan</label><input id="sw-pend" class="form-control" value="${p.Pendidikan||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="sw-jab" class="form-control" value="${p.Jabatan_Terakhir||''}"></div>
+                        <div class="swal-form-group"><label class="swal-form-label">Foto Profil</label><input type="file" id="sw-foto" class="form-control"></div>
+                    `,
+                    preConfirm: async () => {
+                        const fileInput = document.getElementById('sw-foto').files[0];
+                        let fotoUrl = p.Foto_Profil;
+                        if (fileInput) { const base64 = await toBase64(fileInput); const upRes = await fetchGAS({ action: 'upload_file', base64: base64.split(',')[1], mimeType: fileInput.type, nik: currentUser.nik, type: 'FOTO' }); if(upRes.status === 'success') fotoUrl = upRes.url; }
+                        return { NIP: document.getElementById('sw-nip').value, Nama: document.getElementById('sw-nama').value, Tmp_Lahir: document.getElementById('sw-tmp').value, Tgl_Lahir: document.getElementById('sw-tgl').value, JK: document.getElementById('sw-jk').value, Email: document.getElementById('sw-email').value, No_HP: document.getElementById('sw-hp').value, Alamat: document.getElementById('sw-alamat').value, Pendidikan: document.getElementById('sw-pend').value, Jabatan_Terakhir: document.getElementById('sw-jab').value, Foto_Profil: fotoUrl };
+                    }
+                });
+                if (formValues) saveData('tb_profil', formValues);
+            } catch (err) { console.error(err); Swal.fire('Error', 'Terjadi kesalahan.', 'error'); }
+        }
+
+        async function addData(tn) {
+            let htmlForm = '';
+            if (tableName === 'tb_pangkat') {
+                htmlForm = `
+                    <div class="swal-form-group"><label class="swal-form-label">Golongan</label><input id="f-1" class="form-control" placeholder="Contoh: III/a"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Pangkat</label><input id="f-2" class="form-control" placeholder="Nama Pangkat"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="f-3" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Tgl SK</label><input type="date" id="f-4" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="f-5" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">File SK</label><input type="file" id="f-f" class="form-control"></div>`;
+            } else if (tableName === 'tb_keluarga') {
+                htmlForm = `
+                    <div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="f-1" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">NIK</label><input id="f-2" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Hubungan</label><select id="f-3" class="form-select"><option>Suami</option><option>Istri</option><option>Anak</option></select></div>
+                    <div class="swal-form-group"><label class="swal-form-label">JK</label><select id="f-4" class="form-select"><option value="L">L</option><option value="P">P</option></select></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Tgl Lahir</label><input type="date" id="f-5" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Tunjangan</label><select id="f-6" class="form-select"><option>Ya</option><option>Tidak</option></select></div>`;
+            } else if (tableName === 'tb_jabatan') {
+                htmlForm = `
+                    <div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="f-1" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="f-2" class="form-select"><option>Struktural</option><option>Fungsional</option></select></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Eselon</label><input id="f-3" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Unit</label><input id="f-4" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="f-5" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="f-6" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">File SK</label><input type="file" id="f-f" class="form-control"></div>`;
+            } else if (tableName === 'tb_kartu') {
+                htmlForm = `
+                    <div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="f-1" class="form-select"><option>BPJS</option><option>NPWP</option><option>Karpeg</option></select></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Nomor</label><input id="f-2" class="form-control"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Foto</label><input type="file" id="f-f" class="form-control"></div>`;
+            }
+
+            const { value: formValues } = await Swal.fire({
+                title: 'Tambah Data', html: htmlForm, showCancelButton: true, confirmButtonText: 'Simpan', customClass: { popup: 'swal-wide-mobile' },
+                preConfirm: async () => {
+                    if (!htmlForm) return null;
+                    let fileUrl = ''; const fileInput = document.getElementById('f-f');
+                    if (fileInput && fileInput.files[0]) {
+                        const base64 = await toBase64(fileInput.files[0]);
+                        const upRes = await fetchGAS({ action: 'upload_file', base64: base64.split(',')[1], mimeType: fileInput.files[0].type, nik: currentUser.nik, type: 'DOC' });
+                        if (upRes.status === 'success') fileUrl = upRes.url;
+                    }
+                    if (tableName === 'tb_pangkat') return { Golongan: document.getElementById('f-1').value, Pangkat: document.getElementById('f-2').value, No_SK: document.getElementById('f-3').value, Tgl_SK: document.getElementById('f-4').value, TMT: document.getElementById('f-5').value, Link_File: fileUrl };
+                    else if (tableName === 'tb_keluarga') return { Nama: document.getElementById('f-1').value, NIK_Anggota: document.getElementById('f-2').value, Hubungan: document.getElementById('f-3').value, JK: document.getElementById('f-4').value, Tgl_Lahir: document.getElementById('f-5').value, Tunjangan: document.getElementById('f-6').value };
+                    else if (tableName === 'tb_jabatan') return { Nama_Jabatan: document.getElementById('f-1').value, Jenis_Jabatan: document.getElementById('f-2').value, Eselon: document.getElementById('f-3').value, Unit_Kerja: document.getElementById('f-4').value, No_SK: document.getElementById('f-5').value, TMT: document.getElementById('f-6').value, Link_File: fileUrl };
+                    else if (tableName === 'tb_kartu') return { Jenis_Kartu: document.getElementById('f-1').value, No_Kartu: document.getElementById('f-2').value, Link_File: fileUrl };
+                    return {};
+                }
+            });
+            if (formValues) saveData(tableName, formValues);
+        }
+
         async function saveData(t,v,id=null,tk=null) { toggleLoading(true); const n=tk||currentUser.nik; const ia=currentUser.role==='ADMIN'; const p={action:'save_data',table:t,values:v,nik:n,isAdmin:ia}; if(id)p.values.ID=id; const r=await fetchGAS(p); if(r.status==='success'){ if(!tk||tk===currentUser.nik){const ref=await fetchGAS({action:'get_data',nik:currentUser.nik});if(ref.status==='success')appData=ref.data;} toggleLoading(false); Swal.fire('Sukses','Tersimpan','success').then(()=>{ if(tk&&ia)loadAdminMaster(); else if(t==='tb_profil')navTo('profil'); else navTo(t.split('_')[1]); }); }else{toggleLoading(false);Swal.fire('Error',r.message,'error')} }
         function deleteData(t,id) { Swal.fire({title:'Hapus?',icon:'warning',showCancelButton:true,confirmButtonText:'Ya'}).then(async(r)=>{if(r.isConfirmed){toggleLoading(true); await fetchGAS({action:'delete_data',table:t,id:id}); const ref=await fetchGAS({action:'get_data',nik:currentUser.nik}); appData=ref.data; toggleLoading(false); Swal.fire('Dihapus','','success'); document.querySelector('.nav-link.active').click(); }}); }
         async function fetchGAS(p) { const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(p)}); return await r.json(); }
@@ -308,7 +505,7 @@
         function switchAT(t) { document.querySelectorAll('.nav-tabs button').forEach(b=>{b.classList.remove('active');if(b.innerText.toLowerCase().includes(t))b.classList.add('active')}); if(t==='antrean')loadAA(); else if(t==='master')loadAM(); else loadAAr(); }
         async function loadAA() { const c=document.getElementById('ac'); c.innerHTML='<div class="spinner-border text-primary"></div>'; const r=await fetchGAS({action:'admin_get_pending'}); if(r.status==='success'){adminData=r.data; renderAAT(c);}else c.innerHTML='Error'; }
         function renderAAT(c) { let h=''; const ts=[{id:'tb_profil',l:'Profil'},{id:'tb_pangkat',l:'Pangkat'},{id:'tb_jabatan',l:'Jabatan'},{id:'tb_keluarga',l:'Keluarga'},{id:'tb_kartu',l:'Kartu'}]; let hd=false; ts.forEach(t=>{const l=adminData[t.id]||[]; if(l.length>0){hd=true; let r=l.map(i=>`<tr><td><input type="checkbox" class="cb-${t.id}" value="${i.ID||i.NIK}" onchange="upVB('${t.id}')"></td><td><b>${i.Nama||'-'}</b><br>${i.NIK||i.NIK_Pegawai}</td><td><small>${JSON.stringify(i).slice(0,50)}...</small></td></tr>`).join(''); h+=`<div class="card mb-3"><div class="card-header d-flex justify-content-between"><b>${t.l}</b><button class="btn btn-sm btn-success" id="btn-v-${t.id}" onclick="exBV('${t.id}')" disabled>Verif</button></div><table class="table table-sm mb-0"><tbody>${r}</tbody></table></div>`}}); c.innerHTML=hd?h:'<div class="text-center p-4">Tidak ada antrean.</div>'; }
-        async function loadAM() { const c=document.getElementById('ac'); c.innerHTML='<div class="spinner-border text-primary"></div>'; const r=await fetchGAS({action:'admin_get_table',table:'tb_profil'}); if(r.status==='success'){ const rw=r.data.map((p,i)=>`<tr><td>${i+1}</td><td><img src="${getImgUrl(p.Foto_Profil)}" class="rounded-circle me-2" width="40"><b>${p.Nama}</b><br>${p.NIP||p.NIK}</td><td>${p.Pendidikan||'-'}</td><td>${p.Jabatan_Terakhir||'-'}</td><td><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi}</span></td><td><button onclick="showDU('${encodeURIComponent(JSON.stringify(p))}')" class="btn btn-sm btn-info text-white me-1"><i class="fas fa-eye"></i></button> <button onclick="editUA('${encodeURIComponent(JSON.stringify(p))}')" class="btn btn-sm btn-warning"><i class="fas fa-pencil-alt"></i></button></td></tr>`).join(''); c.innerHTML=`<div class="mb-2"><input id="sm" class="form-control w-50" placeholder="Cari..." onkeyup="filtM()"></div><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>No</th><th>Nama/NIP</th><th>Pend</th><th>Jabatan</th><th>Sts</th><th>Aksi</th></tr></thead><tbody id="tb-m">${rw}</tbody></table></div>`; } }
+        async function loadAM() { const c=document.getElementById('ac'); c.innerHTML='<div class="spinner-border text-primary"></div>'; const r=await fetchGAS({action:'admin_get_table',table:'tb_profil'}); if(r.status==='success'){ const rw=r.data.map((p,i)=>`<tr><td>${i+1}</td><td><img src="${getImgUrl(p.Foto_Profil)}" class="rounded-circle me-2" width="40"><b>${p.Nama}</b><br>${p.NIP||p.NIK}</td><td>${p.Pendidikan||'-'}</td><td>${p.Jabatan_Terakhir||'-'}</td><td><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi}</span></td><td><button onclick="showDU('${encodeURIComponent(JSON.stringify(p))}')" class="btn btn-sm btn-info text-white me-1"><i class="fas fa-eye"></i></button> <button onclick="editUA('${encodeURIComponent(JSON.stringify(p))}')" class="btn btn-sm btn-warning"><i class="fas fa-pencil-alt"></i></button></td></tr>`).join(''); c.innerHTML=`<div class="mb-2"><input id="sm" class="form-control w-50" placeholder="Cari..." onkeyup="filtM()"></div><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>No</th><th>Nama/NIP</th><th>Jabatan</th><th>Sts</th><th>Aksi</th></tr></thead><tbody id="tb-m">${rw}</tbody></table></div>`; } }
         function filtM() { const v=document.getElementById('sm').value.toLowerCase(); document.querySelectorAll('#tb-m tr').forEach(r=>{r.style.display=r.innerText.toLowerCase().includes(v)?'':'none'}); }
         function showDU(s) { const p=JSON.parse(decodeURIComponent(s)); Swal.fire({title:'Detail',html:`<div class="text-start">Nama: ${p.Nama}<br>NIK: ${p.NIK}<br>HP: ${p.No_HP}</div>`}); }
         
@@ -319,10 +516,30 @@
         
         async function editArsipItem(t,d) {
             let h=''; 
-            if(t==='tb_pangkat') h=`<div class="swal-form-group"><label class="swal-form-label">Golongan</label><input id="e-gol" class="form-control" value="${d.Golongan||''}"></div><div class="swal-form-group"><label class="swal-form-label">Pangkat</label><input id="e-pangkat" class="form-control" value="${d.Pangkat||''}"></div><div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="e-nosk" class="form-control" value="${d.No_SK||''}"></div><div class="swal-form-group"><label class="swal-form-label">Tgl SK</label><input type="date" id="e-tglsk" class="form-control" value="${d.Tgl_SK||''}"></div><div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="e-tmt" class="form-control" value="${d.TMT||''}"></div>`;
-            else if(t==='tb_jabatan') h=`<div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="e-jab" class="form-control" value="${d.Nama_Jabatan||''}"></div><div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="e-jenis" class="form-select"><option value="Struktural" ${d.Jenis_Jabatan==='Struktural'?'selected':''}>Struktural</option><option value="Fungsional" ${d.Jenis_Jabatan==='Fungsional'?'selected':''}>Fungsional</option><option value="Pelaksana" ${d.Jenis_Jabatan==='Pelaksana'?'selected':''}>Pelaksana</option></select></div><div class="swal-form-group"><label class="swal-form-label">Eselon</label><input id="e-eselon" class="form-control" value="${d.Eselon||''}"></div><div class="swal-form-group"><label class="swal-form-label">Unit</label><input id="e-unit" class="form-control" value="${d.Unit_Kerja||''}"></div><div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="e-nosk" class="form-control" value="${d.No_SK||''}"></div><div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="e-tmt" class="form-control" value="${d.TMT||''}"></div>`;
-            else if(t==='tb_keluarga') h=`<div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="e-nama" class="form-control" value="${d.Nama||''}"></div><div class="swal-form-group"><label class="swal-form-label">NIK</label><input id="e-nik" class="form-control" value="${d.NIK_Anggota||''}"></div><div class="swal-form-group"><label class="swal-form-label">Hubungan</label><select id="e-hub" class="form-select"><option value="Suami" ${d.Hubungan==='Suami'?'selected':''}>Suami</option><option value="Istri" ${d.Hubungan==='Istri'?'selected':''}>Istri</option><option value="Anak" ${d.Hubungan==='Anak'?'selected':''}>Anak</option></select></div><div class="swal-form-group"><label class="swal-form-label">JK</label><select id="e-jk" class="form-select"><option value="L" ${d.JK==='L'?'selected':''}>L</option><option value="P" ${d.JK==='P'?'selected':''}>P</option></select></div><div class="swal-form-group"><label class="swal-form-label">Tgl Lahir</label><input type="date" id="e-tgl" class="form-control" value="${d.Tgl_Lahir||''}"></div><div class="swal-form-group"><label class="swal-form-label">Tunjangan</label><select id="e-tunj" class="form-select"><option value="Ya" ${d.Tunjangan==='Ya'?'selected':''}>Ya</option><option value="Tidak" ${d.Tunjangan==='Tidak'?'selected':''}>Tidak</option></select></div>`;
-            else if(t==='tb_kartu') h=`<div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="e-jenis" class="form-select"><option value="BPJS" ${d.Jenis_Kartu==='BPJS'?'selected':''}>BPJS</option><option value="NPWP" ${d.Jenis_Kartu==='NPWP'?'selected':''}>NPWP</option><option value="Karpeg" ${d.Jenis_Kartu==='Karpeg'?'selected':''}>Karpeg</option><option value="Taspen" ${d.Jenis_Kartu==='Taspen'?'selected':''}>Taspen</option></select></div><div class="swal-form-group"><label class="swal-form-label">Nomor</label><input id="e-nomor" class="form-control" value="${d.No_Kartu||''}"></div>`;
+            if(t==='tb_pangkat') {
+                h=`<div class="swal-form-group"><label class="swal-form-label">Golongan</label><input id="e-gol" class="form-control" value="${d.Golongan||''}"></div>
+                   <div class="swal-form-group"><label class="swal-form-label">Pangkat</label><input id="e-pangkat" class="form-control" value="${d.Pangkat||''}"></div>
+                   <div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="e-nosk" class="form-control" value="${d.No_SK||''}"></div>
+                   <div class="swal-form-group"><label class="swal-form-label">Tgl SK</label><input type="date" id="e-tglsk" class="form-control" value="${d.Tgl_SK||''}"></div>
+                   <div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="e-tmt" class="form-control" value="${d.TMT||''}"></div>`;
+            } else if(t==='tb_jabatan') {
+                h=`<div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="e-jab" class="form-control" value="${d.Nama_Jabatan||''}"></div>
+                   <div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="e-jenis" class="form-select"><option value="Struktural" ${d.Jenis_Jabatan==='Struktural'?'selected':''}>Struktural</option><option value="Fungsional" ${d.Jenis_Jabatan==='Fungsional'?'selected':''}>Fungsional</option><option value="Pelaksana" ${d.Jenis_Jabatan==='Pelaksana'?'selected':''}>Pelaksana</option></select></div>
+                   <div class="swal-form-group"><label class="swal-form-label">Eselon</label><input id="e-eselon" class="form-control" value="${d.Eselon||''}"></div>
+                   <div class="swal-form-group"><label class="swal-form-label">Unit</label><input id="e-unit" class="form-control" value="${d.Unit_Kerja||''}"></div>
+                   <div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="e-nosk" class="form-control" value="${d.No_SK||''}"></div>
+                   <div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="e-tmt" class="form-control" value="${d.TMT||''}"></div>`;
+            } else if(t==='tb_keluarga') {
+                h=`<div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="e-nama" class="form-control" value="${d.Nama||''}"></div>
+                   <div class="swal-form-group"><label class="swal-form-label">NIK</label><input id="e-nik" class="form-control" value="${d.NIK_Anggota||''}"></div>
+                   <div class="swal-form-group"><label class="swal-form-label">Hubungan</label><select id="e-hub" class="form-select"><option value="Suami" ${d.Hubungan==='Suami'?'selected':''}>Suami</option><option value="Istri" ${d.Hubungan==='Istri'?'selected':''}>Istri</option><option value="Anak" ${d.Hubungan==='Anak'?'selected':''}>Anak</option></select></div>
+                   <div class="swal-form-group"><label class="swal-form-label">JK</label><select id="e-jk" class="form-select"><option value="L" ${d.JK==='L'?'selected':''}>L</option><option value="P" ${d.JK==='P'?'selected':''}>P</option></select></div>
+                   <div class="swal-form-group"><label class="swal-form-label">Tgl Lahir</label><input type="date" id="e-tgl" class="form-control" value="${d.Tgl_Lahir||''}"></div>
+                   <div class="swal-form-group"><label class="swal-form-label">Tunjangan</label><select id="e-tunj" class="form-select"><option value="Ya" ${d.Tunjangan==='Ya'?'selected':''}>Ya</option><option value="Tidak" ${d.Tunjangan==='Tidak'?'selected':''}>Tidak</option></select></div>`;
+            } else if(t==='tb_kartu') {
+                 h=`<div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="e-jenis" class="form-select"><option value="BPJS" ${d.Jenis_Kartu==='BPJS'?'selected':''}>BPJS</option><option value="NPWP" ${d.Jenis_Kartu==='NPWP'?'selected':''}>NPWP</option><option value="Karpeg" ${d.Jenis_Kartu==='Karpeg'?'selected':''}>Karpeg</option><option value="Taspen" ${d.Jenis_Kartu==='Taspen'?'selected':''}>Taspen</option></select></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Nomor</label><input id="e-nomor" class="form-control" value="${d.No_Kartu||''}"></div>`;
+            }
             
             const {value:v}=await Swal.fire({title:'Edit Arsip',html:h,showCancelButton:true,confirmButtonText:'Update',preConfirm:()=>{
                 if(t==='tb_pangkat') return {Golongan:document.getElementById('e-gol').value, Pangkat:document.getElementById('e-pangkat').value, No_SK:document.getElementById('e-nosk').value, Tgl_SK:document.getElementById('e-tglsk').value, TMT:document.getElementById('e-tmt').value};
@@ -330,7 +547,10 @@
                 if(t==='tb_keluarga') return {Nama:document.getElementById('e-nama').value, NIK_Anggota:document.getElementById('e-nik').value, Hubungan:document.getElementById('e-hub').value, JK:document.getElementById('e-jk').value, Tgl_Lahir:document.getElementById('e-tgl').value, Tunjangan:document.getElementById('e-tunj').value};
                 return {Jenis_Kartu:document.getElementById('e-jenis').value, No_Kartu:document.getElementById('e-nomor').value};
             }});
-            if(v) {v.Link_File = d.Link_File; saveData(t, v, d.ID, d.NIK||d.NIK_Pegawai);}
+            if(v) {
+                v.Link_File = d.Link_File; 
+                saveData(t, v, d.ID, d.NIK||d.NIK_Pegawai);
+            }
         }
 
         function upVB(t){const c=document.querySelectorAll(`.cb-${t}:checked`).length;document.getElementById(`btn-v-${t}`).disabled=c===0}
