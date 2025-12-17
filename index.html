@@ -18,11 +18,10 @@
         .sidebar { 
             min-height: 100vh; width: 260px; background: var(--primary); color: white; 
             position: fixed; transition: all 0.3s; z-index: 1050; 
-            left: 0; /* Default visible on desktop */
+            left: 0; 
         }
-        .sidebar.collapsed { left: -260px; } /* Class to hide on desktop */
+        .sidebar.collapsed { left: -260px; } 
 
-        /* Ensure Nav Links are Clickable */
         .sidebar .nav-link { 
             color: rgba(255,255,255,0.8); margin: 5px 15px; border-radius: 8px; font-weight: 500; 
             cursor: pointer; position: relative; z-index: 1051;
@@ -30,36 +29,30 @@
         .sidebar .nav-link:hover, .sidebar .nav-link.active { background: rgba(255,255,255,0.15); color: white; transform: translateX(5px); }
         .sidebar .nav-link i { width: 25px; }
         
-        .main-content { 
-            margin-left: 260px; padding: 25px; transition: all 0.3s; 
-        }
-        .main-content.expanded { margin-left: 0; } /* Class to expand content on desktop */
+        .main-content { margin-left: 260px; padding: 25px; transition: all 0.3s; }
+        .main-content.expanded { margin-left: 0; }
         
         /* Mobile Overlay */
         .sidebar-overlay {
-            display: none;
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); z-index: 1040;
         }
         .sidebar-overlay.active { display: block; }
 
-        /* Mobile Specifics */
         @media (max-width: 768px) {
-            .sidebar { left: -260px; } /* Default hidden on mobile */
-            .sidebar.active { left: 0; } /* Show when active */
-            .sidebar.collapsed { left: -260px; } /* Override collapsed logic */
+            .sidebar { left: -260px; } 
+            .sidebar.active { left: 0; }
+            .sidebar.collapsed { left: -260px; }
             .main-content { margin-left: 0; }
             .main-content.expanded { margin-left: 0; }
         }
 
-        /* --- SWEETALERT2 CUSTOMIZATION --- */
+        /* Styling */
         .swal2-popup { font-size: 0.9rem !important; border-radius: 12px !important; padding: 1.5em !important; }
         .swal2-title { font-size: 1.4rem !important; font-weight: 700 !important; color: #333 !important; }
         .swal2-html-container { font-size: 0.95rem !important; color: #555 !important; text-align: left !important; }
         .swal-form-group { text-align: left; margin-bottom: 1rem; }
         .swal-form-label { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem; display: block; color: #444; }
-
-        /* Components */
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s; }
         .status-badge-DRAFT { background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; border: 1px solid #ffeeba; }
         .status-badge-VERIFIED { background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; border: 1px solid #c3e6cb; }
@@ -68,7 +61,6 @@
         .nav-tabs .nav-link { cursor: pointer; color: #6c757d; }
         .nav-tabs .nav-link.active { border-bottom: 3px solid var(--primary); color: var(--primary); font-weight: bold; border-top: none; border-left: none; border-right: none; }
         
-        /* Login Styling */
         .login-wrapper { min-height: 100vh; background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%); display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-card-modern { background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); width: 100%; max-width: 420px; padding: 40px; position: relative; overflow: hidden; }
         .login-card-modern::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
@@ -176,8 +168,6 @@
             </div>
             
             <ul class="nav flex-column mb-auto">
-                <!-- Using Internal Keys for Logic, but Labels can be anything -->
-                <!-- [FIX] Added cursor:pointer to make sure mobile browsers treat them as clickable -->
                 <li class="nav-item"><a class="nav-link active" onclick="navTo('profil')" style="cursor: pointer;"><i class="fas fa-user-circle"></i> Profil Pegawai</a></li>
                 <li class="nav-item"><a class="nav-link" onclick="navTo('pangkat')" style="cursor: pointer;"><i class="fas fa-medal"></i> Riwayat Pangkat</a></li>
                 <li class="nav-item"><a class="nav-link" onclick="navTo('jabatan')" style="cursor: pointer;"><i class="fas fa-briefcase"></i> Riwayat Jabatan</a></li>
@@ -205,79 +195,24 @@
         let selectedIds = []; 
 
         function toggleLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
-
-        // [MODIFIED] Sidebar Toggle Logic (Works on Mobile & Desktop)
-        function toggleSidebar() {
+        function toggleSidebar() { 
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
             const mainContent = document.getElementById('main-content');
-            
-            // Cek apakah mode Desktop atau Mobile
-            if (window.innerWidth > 768) {
-                // Desktop: Toggle Collapse
-                sidebar.classList.toggle('collapsed');
-                mainContent.classList.toggle('expanded');
-            } else {
-                // Mobile: Toggle Overlay
-                sidebar.classList.toggle('active');
-                overlay.classList.toggle('active');
-            }
+            if (window.innerWidth > 768) { sidebar.classList.toggle('collapsed'); mainContent.classList.toggle('expanded'); } 
+            else { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); }
         }
-
-        // [HELPER] Toggle Password Visibility
         function togglePassword(inputId, trigger) {
-            const input = document.getElementById(inputId);
-            const icon = trigger.querySelector('i');
-            if (input.type === "password") {
-                input.type = "text";
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = "password";
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
+            const input = document.getElementById(inputId); const icon = trigger.querySelector('i');
+            if (input.type === "password") { input.type = "text"; icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash'); } 
+            else { input.type = "password"; icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
         }
+        function getImgUrl(url) { if (!url || url.length < 5) return 'https://via.placeholder.com/150'; if (url.includes('drive.google.com/file/d/')) { try { const id = url.split('/d/')[1].split('/')[0]; return `https://lh3.googleusercontent.com/d/${id}`; } catch(e) { return url; } } return url; }
+        function toBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); }); }
+        function formatDateDisplay(d) { if(!d) return '-'; const date = new Date(d); if(isNaN(date.getTime())) return d; const day = String(date.getDate()).padStart(2, '0'); const month = String(date.getMonth() + 1).padStart(2, '0'); const year = date.getFullYear(); return `${day}-${month}-${year}`; }
+        function switchAuthMode(mode) { const l=document.getElementById('view-auth-login'); const r=document.getElementById('view-auth-register'); if(mode==='register'){l.classList.add('d-none');r.classList.remove('d-none');r.classList.add('animate-fade')}else{r.classList.add('d-none');l.classList.remove('d-none');l.classList.add('animate-fade')} }
 
-        function getImgUrl(url) {
-            if (!url || url.length < 5) return 'https://via.placeholder.com/150';
-            if (url.includes('drive.google.com/file/d/')) {
-                try {
-                    const id = url.split('/d/')[1].split('/')[0];
-                    return `https://lh3.googleusercontent.com/d/${id}`;
-                } catch(e) { return url; }
-            }
-            return url;
-        }
-
-        function toBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        }
-        
-        // [NEW] Helper untuk Format Tanggal Tampilan (DD-MM-YYYY)
-        function formatDateDisplay(d) {
-            if(!d) return '-';
-            const date = new Date(d);
-            if(isNaN(date.getTime())) return d; // Jika bukan tanggal, kembalikan aslinya
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            return `${day}-${month}-${year}`;
-        }
-
-        function switchAuthMode(mode) {
-            const loginView = document.getElementById('view-auth-login');
-            const registerView = document.getElementById('view-auth-register');
-            if (mode === 'register') { loginView.classList.add('d-none'); registerView.classList.remove('d-none'); registerView.classList.add('animate-fade'); } 
-            else { registerView.classList.add('d-none'); loginView.classList.remove('d-none'); loginView.classList.add('animate-fade'); }
-        }
-
-        // --- AUTH API CALLS ---
+        // --- AUTH ---
         async function handleLogin(e) { e.preventDefault(); const i=document.getElementById('l-identifier').value, p=document.getElementById('l-pass').value; toggleLoading(true); const r=await fetchGAS({action:'login',identifier:i,password:p}); toggleLoading(false); if(r.status==='success') loginSuccess(r.user); else Swal.fire('Gagal',r.message,'error'); }
         async function handleRegister(e) { e.preventDefault(); const n=document.getElementById('r-nik').value, nm=document.getElementById('r-nama').value, em=document.getElementById('r-email').value, p=document.getElementById('r-pass').value; if(!em){Swal.fire('Error','Email wajib','warning');return} if(!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(p)){Swal.fire('Lemah','Min 6 karakter (huruf+angka)','warning');return} toggleLoading(true); const r=await fetchGAS({action:'register',nik:n,nama:nm,email:em,password:p}); toggleLoading(false); if(r.status==='success'){Swal.fire('Berhasil','Akun dibuat.','success');switchAuthMode('login')}else Swal.fire('Gagal',r.message,'error'); }
         function handleCredentialResponse(r) { const p=JSON.parse(atob(r.credential.split('.')[1])); toggleLoading(true); fetchGAS({action:'google_login',email:p.email}).then(res=>{toggleLoading(false); if(res.status==='success')loginSuccess(res.user); else Swal.fire('Gagal',res.message,'error')}); }
@@ -302,190 +237,68 @@
             } 
         }
 
-        // [NEW] ROUTER LOGIC
+        // [ROUTER LOGIC]
         function processCurrentHash() {
-            let hash = window.location.hash.substring(1); // Remove #
+            let hash = window.location.hash.substring(1); 
             if(!hash) hash = 'profil';
-
-            // Mapping friendly URLs
             if (hash === 'riwayatjabatan') hash = 'jabatan';
             else if (hash === 'riwayatpangkat') hash = 'pangkat';
             else if (hash === 'anggotakeluarga') hash = 'keluarga';
             else if (hash === 'datakartu') hash = 'kartu';
-
-            // Admin Guard
             if (hash === 'admin' && currentUser.role !== 'ADMIN') hash = 'profil';
-
             renderPage(hash);
         }
         
         window.addEventListener('hashchange', processCurrentHash);
 
         function navTo(page) {
-            // UI Sidebar Handling: Auto close on mobile
-            if (window.innerWidth <= 768) { 
-                document.getElementById('sidebar').classList.remove('active'); 
-                document.getElementById('sidebar-overlay').classList.remove('active'); 
-            }
-            
-            // Generate URL Hash
+            if (window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('active'); document.getElementById('sidebar-overlay').classList.remove('active'); }
             let urlHash = page;
             if (page === 'jabatan') urlHash = 'riwayatjabatan';
             else if (page === 'pangkat') urlHash = 'riwayatpangkat';
             else if (page === 'keluarga') urlHash = 'anggotakeluarga';
             else if (page === 'kartu') urlHash = 'datakartu';
-
-            // Set Hash (Triggers hashchange -> processCurrentHash -> renderPage)
             window.location.hash = urlHash;
         }
 
         function renderPage(page) {
             document.querySelectorAll('.nav-link').forEach(e=>e.classList.remove('active'));
-            // Reverse mapping for menu highlighting logic
-            let menuKey = page;
+            let menuKey = page; // fallback
+            if(page==='pangkat') menuKey='pangkat'; 
+            else if(page==='jabatan') menuKey='jabatan';
             const menu = document.querySelector(`[onclick="navTo('${menuKey}')"]`);
             if(menu) menu.classList.add('active');
             
             const container = document.getElementById('view-container');
             if(page==='profil') renderProfil(container);
-            else if(page==='pangkat') renderTable(container,'Riwayat Pangkat',appData.tb_pangkat,'tb_pangkat');
-            else if(page==='jabatan') renderTable(container,'Riwayat Jabatan',appData.tb_jabatan,'tb_jabatan');
-            else if(page==='keluarga') renderTable(container,'Anggota Keluarga',appData.tb_keluarga,'tb_keluarga');
-            else if(page==='kartu') renderTable(container,'Data Kartu Identitas',appData.tb_kartu,'tb_kartu');
+            // [FIX] Changed renderTable call signature to handle undefined data safely inside the function
+            else if(page==='pangkat') renderTable(container,'Riwayat Pangkat','tb_pangkat');
+            else if(page==='jabatan') renderTable(container,'Riwayat Jabatan','tb_jabatan');
+            else if(page==='keluarga') renderTable(container,'Anggota Keluarga','tb_keluarga');
+            else if(page==='kartu') renderTable(container,'Data Kartu Identitas','tb_kartu');
             else if(page==='admin') renderAdminDashboardV2(container);
         }
 
-        // --- RENDERERS ---
-        function renderProfil(c) { 
-            const p=appData.profil||{}; 
-            const url=getImgUrl(p.Foto_Profil); 
-            const l=currentUser.email_login?.toLowerCase().trim(); 
-            const pe=p.Email?.toLowerCase().trim(); 
-            const en= (pe&&l&&pe===l) ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size:0.7em"><i class="fas fa-check-circle"></i> Login OK</span>' : '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25" style="font-size:0.7em"><i class="fas fa-info-circle"></i> Kontak Saja</span>'; 
-            
-            // [MODIFIED] Using formatDateDisplay for nicely formatted date
-            const formattedTgl = formatDateDisplay(p.Tgl_Lahir);
-
-            c.innerHTML=`<div class="card p-4"><div class="d-flex justify-content-between mb-4 border-bottom pb-3"><h4 class="fw-bold text-primary mb-0">Profil Pegawai</h4><div><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi||'DRAFT'}</span><button onclick="editProfil()" class="btn btn-sm btn-primary ms-1"><i class="fas fa-edit"></i> Edit</button><button onclick="changePassword()" class="btn btn-sm btn-warning ms-1"><i class="fas fa-key"></i> Pass</button></div></div><div class="row"><div class="col-md-3 text-center mb-3"><img src="${url}" class="img-thumbnail rounded-circle mb-2" style="width:150px;height:150px;object-fit:cover"><h5 class="fw-bold">${p.Nama||'Nama Pegawai'}</h5><p class="text-muted">${p.NIP||'-'}</p></div><div class="col-md-9"><div class="row g-3"><div class="col-md-6"><label class="small text-muted">NIK</label><p class="fw-bold">${p.NIK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">NIP</label><p class="fw-bold">${p.NIP||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Tgl Lahir</label><p class="fw-bold">${p.Tmp_Lahir||''}, ${formattedTgl}</p></div><div class="col-md-6"><label class="small text-muted">JK</label><p class="fw-bold">${p.JK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Email Kontak</label><p class="fw-bold mb-1">${p.Email||'-'}</p>${en}</div><div class="col-md-6"><label class="small text-muted">HP</label><p class="fw-bold">${p.No_HP||'-'}</p></div><div class="col-md-12"><label class="small text-muted">Alamat</label><p class="fw-bold">${p.Alamat||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Pendidikan</label><p class="fw-bold">${p.Pendidikan||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Jabatan</label><p class="fw-bold">${p.Jabatan_Terakhir||'-'}</p></div></div></div></div></div>`; 
-        }
-        
-        async function editProfil() { 
-            const p = appData.profil || {}; 
-            try {
-                const { value: formValues } = await Swal.fire({
-                    title: 'Edit Profil', 
-                    width: '600px', 
-                    showCancelButton: true, 
-                    confirmButtonText: 'Simpan',
-                    html: `
-                        <!-- KOLOM NIK (KTP) - TERKUNCI -->
-                        <div class="swal-form-group">
-                            <label class="swal-form-label">NIK (KTP) <span class="text-danger">*Kunci Data</span></label>
-                            <input id="sw-real-nik" class="form-control bg-light" value="${p.NIK||''}" readonly>
-                        </div>
-
-                        <!-- KOLOM NIP (PEGAWAI) - BISA EDIT -->
-                        <div class="swal-form-group">
-                            <label class="swal-form-label">NIP (Nomor Induk Pegawai)</label>
-                            <input id="sw-nip" class="form-control" placeholder="Masukkan NIP Baru" value="${p.NIP||''}">
-                        </div>
-
-                        <div class="swal-form-group"><label class="swal-form-label">Nama Lengkap</label><input id="sw-nama" class="form-control" value="${p.Nama||''}"></div>
-                        <div class="d-flex gap-2 mb-3"><div class="w-50"><label class="swal-form-label">Tmp Lahir</label><input id="sw-tmp" class="form-control" value="${p.Tmp_Lahir||''}"></div><div class="w-50"><label class="swal-form-label">Tgl Lahir</label><input id="sw-tgl" class="form-control" type="date" value="${p.Tgl_Lahir||''}"></div></div>
-                        <div class="swal-form-group"><label class="swal-form-label">Jenis Kelamin</label><select id="sw-jk" class="form-select"><option value="L" ${p.JK=='L'?'selected':''}>Laki-laki</option><option value="P" ${p.JK=='P'?'selected':''}>Perempuan</option></select></div>
-                        <div class="swal-form-group"><label class="swal-form-label">Email Kontak</label><input id="sw-email" class="form-control" value="${p.Email||''}"><small class="text-muted" style="font-size:0.75rem">*Tidak mengubah email login.</small></div>
-                        <div class="swal-form-group"><label class="swal-form-label">No HP</label><input id="sw-hp" class="form-control" value="${p.No_HP||''}"></div>
-                        <div class="swal-form-group"><label class="swal-form-label">Alamat</label><input id="sw-alamat" class="form-control" value="${p.Alamat||''}"></div>
-                        <div class="swal-form-group"><label class="swal-form-label">Pendidikan</label><input id="sw-pend" class="form-control" value="${p.Pendidikan||''}"></div>
-                        <div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="sw-jab" class="form-control" value="${p.Jabatan_Terakhir||''}"></div>
-                        <div class="swal-form-group"><label class="swal-form-label">Foto Profil</label><input type="file" id="sw-foto" class="form-control"></div>
-                    `,
-                    preConfirm: async () => {
-                        const fileInput = document.getElementById('sw-foto').files[0];
-                        let fotoUrl = p.Foto_Profil;
-                        if (fileInput) { 
-                            const base64 = await toBase64(fileInput); 
-                            const upRes = await fetchGAS({ action: 'upload_file', base64: base64.split(',')[1], mimeType: fileInput.type, nik: currentUser.nik, type: 'FOTO' }); 
-                            if(upRes.status === 'success') fotoUrl = upRes.url; 
-                        }
-                        return {
-                            // NIK tidak dikirim/diupdate karena readonly, yang dikirim NIP
-                            NIP: document.getElementById('sw-nip').value, 
-                            Nama: document.getElementById('sw-nama').value, 
-                            Tmp_Lahir: document.getElementById('sw-tmp').value, 
-                            Tgl_Lahir: document.getElementById('sw-tgl').value, 
-                            JK: document.getElementById('sw-jk').value, 
-                            Email: document.getElementById('sw-email').value, 
-                            No_HP: document.getElementById('sw-hp').value, 
-                            Alamat: document.getElementById('sw-alamat').value, 
-                            Pendidikan: document.getElementById('sw-pend').value, 
-                            Jabatan_Terakhir: document.getElementById('sw-jab').value, 
-                            Foto_Profil: fotoUrl 
-                        };
-                    }
-                });
-                if (formValues) saveData('tb_profil', formValues);
-            } catch (err) { 
-                console.error(err); 
-                Swal.fire('Error', 'Terjadi kesalahan.', 'error'); 
-            } 
-        }
-
-        async function addData(tableName) {
-            let htmlForm = '';
-            // [UPDATED FORM STRUCTURE]
-            if (tableName === 'tb_pangkat') {
-                htmlForm = `
-                    <div class="swal-form-group"><label class="swal-form-label">Golongan</label><input id="f-1" class="form-control" placeholder="Contoh: III/a"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">Pangkat</label><input id="f-2" class="form-control" placeholder="Nama Pangkat"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="f-3" class="form-control"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">Tgl SK</label><input type="date" id="f-4" class="form-control"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="f-5" class="form-control"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">File SK</label><input type="file" id="f-f" class="form-control"></div>`;
-            } else if (tableName === 'tb_keluarga') {
-                htmlForm = `
-                    <div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="f-1" class="form-control"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">NIK</label><input id="f-2" class="form-control"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">Hubungan</label><select id="f-3" class="form-select"><option>Suami</option><option>Istri</option><option>Anak</option></select></div>
-                    <div class="swal-form-group"><label class="swal-form-label">JK</label><select id="f-4" class="form-select"><option value="L">L</option><option value="P">P</option></select></div>
-                    <div class="swal-form-group"><label class="swal-form-label">Tgl Lahir</label><input type="date" id="f-5" class="form-control"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">Tunjangan</label><select id="f-6" class="form-select"><option>Ya</option><option>Tidak</option></select></div>`;
-            } else if (tableName === 'tb_jabatan') {
-                htmlForm = `
-                    <div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="f-1" class="form-control"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="f-2" class="form-select"><option>Struktural</option><option>Fungsional</option></select></div>
-                    <div class="swal-form-group"><label class="swal-form-label">Eselon</label><input id="f-3" class="form-control"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">Unit</label><input id="f-4" class="form-control"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="f-5" class="form-control"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="f-6" class="form-control"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">File SK</label><input type="file" id="f-f" class="form-control"></div>`;
-            } else if (tableName === 'tb_kartu') {
-                htmlForm = `
-                    <div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="f-1" class="form-select"><option>BPJS</option><option>NPWP</option><option>Karpeg</option></select></div>
-                    <div class="swal-form-group"><label class="swal-form-label">Nomor</label><input id="f-2" class="form-control"></div>
-                    <div class="swal-form-group"><label class="swal-form-label">Foto</label><input type="file" id="f-f" class="form-control"></div>`;
+        function renderTable(c,t,tn) { 
+            // [FIX] Safely get data or default to empty array
+            const d = appData[tn] || []; 
+            let h=''; 
+            if(d.length > 0) {
+                d.forEach((i,x)=>{ 
+                    const b = i.Status_Verifikasi === 'VERIFIED' ? 'success' : 'warning'; 
+                    const f = i.Link_File ? `<a href="${i.Link_File}" target="_blank" class="btn btn-sm btn-info me-1"><i class="fas fa-file"></i></a>` : ''; 
+                    h += `<tr><td>${x+1}</td><td><b>${Object.values(i)[2]||'-'}</b><br>${Object.values(i)[3]||'-'}</td><td>${i.TMT||i.Tunjangan||'-'}</td><td><span class="badge bg-${b}">${i.Status_Verifikasi}</span></td><td>${f}<button onclick="deleteData('${tn}','${i.ID}')" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button></td></tr>`;
+                }); 
+            } else {
+                h = '<tr><td colspan="5" class="text-center p-4">Belum ada data.</td></tr>'; 
             }
-
-            const { value: formValues } = await Swal.fire({
-                title: 'Tambah Data', html: htmlForm, showCancelButton: true, confirmButtonText: 'Simpan', customClass: { popup: 'swal-wide-mobile' },
-                preConfirm: async () => {
-                    if (!htmlForm) return null;
-                    let fileUrl = ''; const fileInput = document.getElementById('f-f');
-                    if (fileInput && fileInput.files[0]) {
-                        const base64 = await toBase64(fileInput.files[0]);
-                        const upRes = await fetchGAS({ action: 'upload_file', base64: base64.split(',')[1], mimeType: fileInput.files[0].type, nik: currentUser.nik, type: 'DOC' });
-                        if (upRes.status === 'success') fileUrl = upRes.url;
-                    }
-                    if (tableName === 'tb_pangkat') return { Golongan: document.getElementById('f-1').value, Pangkat: document.getElementById('f-2').value, No_SK: document.getElementById('f-3').value, Tgl_SK: document.getElementById('f-4').value, TMT: document.getElementById('f-5').value, Link_File: fileUrl };
-                    else if (tableName === 'tb_keluarga') return { Nama: document.getElementById('f-1').value, NIK_Anggota: document.getElementById('f-2').value, Hubungan: document.getElementById('f-3').value, JK: document.getElementById('f-4').value, Tgl_Lahir: document.getElementById('f-5').value, Tunjangan: document.getElementById('f-6').value };
-                    else if (tableName === 'tb_jabatan') return { Nama_Jabatan: document.getElementById('f-1').value, Jenis_Jabatan: document.getElementById('f-2').value, Eselon: document.getElementById('f-3').value, Unit_Kerja: document.getElementById('f-4').value, No_SK: document.getElementById('f-5').value, TMT: document.getElementById('f-6').value, Link_File: fileUrl };
-                    else if (tableName === 'tb_kartu') return { Jenis_Kartu: document.getElementById('f-1').value, No_Kartu: document.getElementById('f-2').value, Link_File: fileUrl };
-                    return {};
-                }
-            });
-            if (formValues) saveData(tableName, formValues);
+            c.innerHTML=`<div class="card p-4"><div class="d-flex justify-content-between mb-4"><h4 class="text-primary fw-bold text-capitalize">${t}</h4><button onclick="addData('${tn}')" class="btn btn-primary"><i class="fas fa-plus"></i> Tambah</button></div><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>No</th><th>Detail</th><th>Ket</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${h}</tbody></table></div></div>`; 
         }
 
+        // ... (Functions addData, saveData, deleteData same as before) ...
+        function renderProfil(c) { const p=appData.profil||{}; const url=getImgUrl(p.Foto_Profil); const l=currentUser.email_login?.toLowerCase().trim(); const pe=p.Email?.toLowerCase().trim(); const en= (pe&&l&&pe===l) ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size:0.7em"><i class="fas fa-check-circle"></i> Login OK</span>' : '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25" style="font-size:0.7em"><i class="fas fa-info-circle"></i> Kontak Saja</span>'; const ft=formatDateDisplay(p.Tgl_Lahir); c.innerHTML=`<div class="card p-4"><div class="d-flex justify-content-between mb-4 border-bottom pb-3"><h4 class="fw-bold text-primary mb-0">Profil Pegawai</h4><div><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi||'DRAFT'}</span><button onclick="editProfil()" class="btn btn-sm btn-primary ms-1"><i class="fas fa-edit"></i> Edit</button><button onclick="changePassword()" class="btn btn-sm btn-warning ms-1"><i class="fas fa-key"></i> Pass</button></div></div><div class="row"><div class="col-md-3 text-center mb-3"><img src="${url}" class="img-thumbnail rounded-circle mb-2" style="width:150px;height:150px;object-fit:cover"><h5 class="fw-bold">${p.Nama||'Nama Pegawai'}</h5><p class="text-muted">${p.NIP||'-'}</p></div><div class="col-md-9"><div class="row g-3"><div class="col-md-6"><label class="small text-muted">NIK</label><p class="fw-bold">${p.NIK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">NIP</label><p class="fw-bold">${p.NIP||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Tgl Lahir</label><p class="fw-bold">${p.Tmp_Lahir||''}, ${ft}</p></div><div class="col-md-6"><label class="small text-muted">JK</label><p class="fw-bold">${p.JK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Email Kontak</label><p class="fw-bold mb-1">${p.Email||'-'}</p>${en}</div><div class="col-md-6"><label class="small text-muted">HP</label><p class="fw-bold">${p.No_HP||'-'}</p></div><div class="col-md-12"><label class="small text-muted">Alamat</label><p class="fw-bold">${p.Alamat||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Pendidikan</label><p class="fw-bold">${p.Pendidikan||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Jabatan</label><p class="fw-bold">${p.Jabatan_Terakhir||'-'}</p></div></div></div></div></div>`; }
+        async function editProfil() { const p=appData.profil||{}; try{const {value:v}=await Swal.fire({title:'Edit Profil',width:'600px',showCancelButton:true,confirmButtonText:'Simpan',html:`<div class="swal-form-group"><label class="swal-form-label">NIK (Tetap)</label><input id="sw-real-nik" class="form-control bg-light" value="${p.NIK||''}" readonly></div><div class="swal-form-group"><label class="swal-form-label">NIP</label><input id="sw-nip" class="form-control" value="${p.NIP||''}"></div><div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="sw-nama" class="form-control" value="${p.Nama||''}"></div><div class="d-flex gap-2 mb-2"><div class="w-50"><input id="sw-tmp" class="form-control" placeholder="Tmp Lahir" value="${p.Tmp_Lahir||''}"></div><div class="w-50"><input id="sw-tgl" class="form-control" type="date" value="${p.Tgl_Lahir||''}"></div></div><div class="swal-form-group"><label class="swal-form-label">Jenis Kelamin</label><select id="sw-jk" class="form-select"><option value="L" ${p.JK=='L'?'selected':''}>Laki-laki</option><option value="P" ${p.JK=='P'?'selected':''}>Perempuan</option></select></div><div class="swal-form-group"><label class="swal-form-label">Email Kontak</label><input id="sw-email" class="form-control" value="${p.Email||''}"><small class="text-muted">*Tidak mengubah email login.</small></div><div class="swal-form-group"><label class="swal-form-label">HP</label><input id="sw-hp" class="form-control" value="${p.No_HP||''}"></div><div class="swal-form-group"><label class="swal-form-label">Alamat</label><input id="sw-alamat" class="form-control" value="${p.Alamat||''}"></div><div class="swal-form-group"><label class="swal-form-label">Pendidikan</label><input id="sw-pend" class="form-control" value="${p.Pendidikan||''}"></div><div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="sw-jab" class="form-control" value="${p.Jabatan_Terakhir||''}"></div><div class="swal-form-group"><label class="swal-form-label">Foto</label><input type="file" id="sw-foto" class="form-control"></div>`, preConfirm:async()=>{const f=document.getElementById('sw-foto').files[0]; let url=p.Foto_Profil; if(f){const b64=await toBase64(f); const r=await fetchGAS({action:'upload_file',base64:b64.split(',')[1],mimeType:f.type,nik:currentUser.nik,type:'FOTO'}); if(r.status==='success')url=r.url;} return{NIP:document.getElementById('sw-nip').value,Nama:document.getElementById('sw-nama').value,Tmp_Lahir:document.getElementById('sw-tmp').value,Tgl_Lahir:document.getElementById('sw-tgl').value,JK:document.getElementById('sw-jk').value,Email:document.getElementById('sw-email').value,No_HP:document.getElementById('sw-hp').value,Alamat:document.getElementById('sw-alamat').value,Pendidikan:document.getElementById('sw-pend').value,Jabatan_Terakhir:document.getElementById('sw-jab').value,Foto_Profil:url};}}); if(v)saveData('tb_profil',v);}catch(e){console.error(e);Swal.fire('Error','Gagal','error')}}
+        async function addData(tn) { let h=''; if(tn==='tb_pangkat')h=`<div class="swal-form-group"><label class="swal-form-label">Golongan</label><input id="f-1" class="form-control" placeholder="Contoh: III/a"></div><div class="swal-form-group"><label class="swal-form-label">Pangkat</label><input id="f-2" class="form-control" placeholder="Nama Pangkat"></div><div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="f-3" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">Tgl SK</label><input type="date" id="f-4" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="f-5" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">File SK</label><input type="file" id="f-f" class="form-control"></div>`; else if(tn==='tb_keluarga')h=`<div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="f-1" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">NIK</label><input id="f-2" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">Hubungan</label><select id="f-3" class="form-select"><option>Suami</option><option>Istri</option><option>Anak</option></select></div><div class="swal-form-group"><label class="swal-form-label">JK</label><select id="f-4" class="form-select"><option value="L">L</option><option value="P">P</option></select></div><div class="swal-form-group"><label class="swal-form-label">Tgl Lahir</label><input type="date" id="f-5" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">Tunjangan</label><select id="f-6" class="form-select"><option>Ya</option><option>Tidak</option></select></div>`; else if(tn==='tb_jabatan')h=`<div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="f-1" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="f-2" class="form-select"><option>Struktural</option><option>Fungsional</option></select></div><div class="swal-form-group"><label class="swal-form-label">Eselon</label><input id="f-3" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">Unit</label><input id="f-4" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="f-5" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="f-6" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">File SK</label><input type="file" id="f-f" class="form-control"></div>`; else if(tn==='tb_kartu')h=`<div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="f-1" class="form-select"><option>BPJS</option><option>NPWP</option><option>Karpeg</option></select></div><div class="swal-form-group"><label class="swal-form-label">Nomor</label><input id="f-2" class="form-control"></div><div class="swal-form-group"><label class="swal-form-label">Foto</label><input type="file" id="f-f" class="form-control"></div>`; const {value:v}=await Swal.fire({title:'Tambah Data',html:h,showCancelButton:true,confirmButtonText:'Simpan',customClass:{popup:'swal-wide-mobile'},preConfirm:async()=>{ const f=document.getElementById('f-f'); let url=''; if(f&&f.files[0]){const b64=await toBase64(f.files[0]); const r=await fetchGAS({action:'upload_file',base64:b64.split(',')[1],mimeType:f.files[0].type,nik:currentUser.nik,type:'DOC'}); if(r.status==='success')url=r.url;} if(tn==='tb_pangkat')return{Golongan:document.getElementById('f-1').value,Pangkat:document.getElementById('f-2').value,No_SK:document.getElementById('f-3').value,Tgl_SK:document.getElementById('f-4').value,TMT:document.getElementById('f-5').value,Link_File:url}; else if(tn==='tb_keluarga')return{Nama:document.getElementById('f-1').value,NIK_Anggota:document.getElementById('f-2').value,Hubungan:document.getElementById('f-3').value,JK:document.getElementById('f-4').value,Tgl_Lahir:document.getElementById('f-5').value,Tunjangan:document.getElementById('f-6').value}; else if(tn==='tb_jabatan')return{Nama_Jabatan:document.getElementById('f-1').value,Jenis_Jabatan:document.getElementById('f-2').value,Eselon:document.getElementById('f-3').value,Unit_Kerja:document.getElementById('f-4').value,No_SK:document.getElementById('f-5').value,TMT:document.getElementById('f-6').value,Link_File:url}; else if(tn==='tb_kartu')return{Jenis_Kartu:document.getElementById('f-1').value,No_Kartu:document.getElementById('f-2').value,Link_File:url}; }}); if(v)saveData(tn,v); }
         async function saveData(t,v,id=null,tk=null) { toggleLoading(true); const n=tk||currentUser.nik; const ia=currentUser.role==='ADMIN'; const p={action:'save_data',table:t,values:v,nik:n,isAdmin:ia}; if(id)p.values.ID=id; const r=await fetchGAS(p); if(r.status==='success'){ if(!tk||tk===currentUser.nik){const ref=await fetchGAS({action:'get_data',nik:currentUser.nik});if(ref.status==='success')appData=ref.data;} toggleLoading(false); Swal.fire('Sukses','Tersimpan','success').then(()=>{ if(tk&&ia)loadAdminMaster(); else if(t==='tb_profil')navTo('profil'); else navTo(t.split('_')[1]); }); }else{toggleLoading(false);Swal.fire('Error',r.message,'error')} }
         function deleteData(t,id) { Swal.fire({title:'Hapus?',icon:'warning',showCancelButton:true,confirmButtonText:'Ya'}).then(async(r)=>{if(r.isConfirmed){toggleLoading(true); await fetchGAS({action:'delete_data',table:t,id:id}); const ref=await fetchGAS({action:'get_data',nik:currentUser.nik}); appData=ref.data; toggleLoading(false); Swal.fire('Dihapus','','success'); document.querySelector('.nav-link.active').click(); }}); }
         async function fetchGAS(p) { const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(p)}); return await r.json(); }
@@ -495,7 +308,7 @@
         function switchAT(t) { document.querySelectorAll('.nav-tabs button').forEach(b=>{b.classList.remove('active');if(b.innerText.toLowerCase().includes(t))b.classList.add('active')}); if(t==='antrean')loadAA(); else if(t==='master')loadAM(); else loadAAr(); }
         async function loadAA() { const c=document.getElementById('ac'); c.innerHTML='<div class="spinner-border text-primary"></div>'; const r=await fetchGAS({action:'admin_get_pending'}); if(r.status==='success'){adminData=r.data; renderAAT(c);}else c.innerHTML='Error'; }
         function renderAAT(c) { let h=''; const ts=[{id:'tb_profil',l:'Profil'},{id:'tb_pangkat',l:'Pangkat'},{id:'tb_jabatan',l:'Jabatan'},{id:'tb_keluarga',l:'Keluarga'},{id:'tb_kartu',l:'Kartu'}]; let hd=false; ts.forEach(t=>{const l=adminData[t.id]||[]; if(l.length>0){hd=true; let r=l.map(i=>`<tr><td><input type="checkbox" class="cb-${t.id}" value="${i.ID||i.NIK}" onchange="upVB('${t.id}')"></td><td><b>${i.Nama||'-'}</b><br>${i.NIK||i.NIK_Pegawai}</td><td><small>${JSON.stringify(i).slice(0,50)}...</small></td></tr>`).join(''); h+=`<div class="card mb-3"><div class="card-header d-flex justify-content-between"><b>${t.l}</b><button class="btn btn-sm btn-success" id="btn-v-${t.id}" onclick="exBV('${t.id}')" disabled>Verif</button></div><table class="table table-sm mb-0"><tbody>${r}</tbody></table></div>`}}); c.innerHTML=hd?h:'<div class="text-center p-4">Tidak ada antrean.</div>'; }
-        async function loadAM() { const c=document.getElementById('ac'); c.innerHTML='<div class="spinner-border text-primary"></div>'; const r=await fetchGAS({action:'admin_get_table',table:'tb_profil'}); if(r.status==='success'){ const rw=r.data.map((p,i)=>`<tr><td>${i+1}</td><td><img src="${getImgUrl(p.Foto_Profil)}" class="rounded-circle me-2" width="40"><b>${p.Nama}</b><br>${p.NIP||p.NIK}</td><td>${p.Pendidikan||'-'}</td><td>${p.Jabatan_Terakhir||'-'}</td><td><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi}</span></td><td><button onclick="showDU('${encodeURIComponent(JSON.stringify(p))}')" class="btn btn-sm btn-info text-white me-1"><i class="fas fa-eye"></i></button> <button onclick="editUA('${encodeURIComponent(JSON.stringify(p))}')" class="btn btn-sm btn-warning"><i class="fas fa-pencil-alt"></i></button></td></tr>`).join(''); c.innerHTML=`<div class="mb-2"><input id="sm" class="form-control w-50" placeholder="Cari..." onkeyup="filtM()"></div><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>No</th><th>Nama/NIP</th><th>Jabatan</th><th>Sts</th><th>Aksi</th></tr></thead><tbody id="tb-m">${rw}</tbody></table></div>`; } }
+        async function loadAM() { const c=document.getElementById('ac'); c.innerHTML='<div class="spinner-border text-primary"></div>'; const r=await fetchGAS({action:'admin_get_table',table:'tb_profil'}); if(r.status==='success'){ const rw=r.data.map((p,i)=>`<tr><td>${i+1}</td><td><img src="${getImgUrl(p.Foto_Profil)}" class="rounded-circle me-2" width="40"><b>${p.Nama}</b><br>${p.NIP||p.NIK}</td><td>${p.Pendidikan||'-'}</td><td>${p.Jabatan_Terakhir||'-'}</td><td><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi}</span></td><td><button onclick="showDU('${encodeURIComponent(JSON.stringify(p))}')" class="btn btn-sm btn-info text-white me-1"><i class="fas fa-eye"></i></button> <button onclick="editUA('${encodeURIComponent(JSON.stringify(p))}')" class="btn btn-sm btn-warning"><i class="fas fa-pencil-alt"></i></button></td></tr>`).join(''); c.innerHTML=`<div class="mb-2"><input id="sm" class="form-control w-50" placeholder="Cari..." onkeyup="filtM()"></div><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>No</th><th>Nama/NIP</th><th>Pend</th><th>Jabatan</th><th>Sts</th><th>Aksi</th></tr></thead><tbody id="tb-m">${rw}</tbody></table></div>`; } }
         function filtM() { const v=document.getElementById('sm').value.toLowerCase(); document.querySelectorAll('#tb-m tr').forEach(r=>{r.style.display=r.innerText.toLowerCase().includes(v)?'':'none'}); }
         function showDU(s) { const p=JSON.parse(decodeURIComponent(s)); Swal.fire({title:'Detail',html:`<div class="text-start">Nama: ${p.Nama}<br>NIK: ${p.NIK}<br>HP: ${p.No_HP}</div>`}); }
         
@@ -506,30 +319,10 @@
         
         async function editArsipItem(t,d) {
             let h=''; 
-            if(t==='tb_pangkat') {
-                h=`<div class="swal-form-group"><label class="swal-form-label">Golongan</label><input id="e-gol" class="form-control" value="${d.Golongan||''}"></div>
-                   <div class="swal-form-group"><label class="swal-form-label">Pangkat</label><input id="e-pangkat" class="form-control" value="${d.Pangkat||''}"></div>
-                   <div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="e-nosk" class="form-control" value="${d.No_SK||''}"></div>
-                   <div class="swal-form-group"><label class="swal-form-label">Tgl SK</label><input type="date" id="e-tglsk" class="form-control" value="${d.Tgl_SK||''}"></div>
-                   <div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="e-tmt" class="form-control" value="${d.TMT||''}"></div>`;
-            } else if(t==='tb_jabatan') {
-                h=`<div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="e-jab" class="form-control" value="${d.Nama_Jabatan||''}"></div>
-                   <div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="e-jenis" class="form-select"><option value="Struktural" ${d.Jenis_Jabatan==='Struktural'?'selected':''}>Struktural</option><option value="Fungsional" ${d.Jenis_Jabatan==='Fungsional'?'selected':''}>Fungsional</option><option value="Pelaksana" ${d.Jenis_Jabatan==='Pelaksana'?'selected':''}>Pelaksana</option></select></div>
-                   <div class="swal-form-group"><label class="swal-form-label">Eselon</label><input id="e-eselon" class="form-control" value="${d.Eselon||''}"></div>
-                   <div class="swal-form-group"><label class="swal-form-label">Unit</label><input id="e-unit" class="form-control" value="${d.Unit_Kerja||''}"></div>
-                   <div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="e-nosk" class="form-control" value="${d.No_SK||''}"></div>
-                   <div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="e-tmt" class="form-control" value="${d.TMT||''}"></div>`;
-            } else if(t==='tb_keluarga') {
-                h=`<div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="e-nama" class="form-control" value="${d.Nama||''}"></div>
-                   <div class="swal-form-group"><label class="swal-form-label">NIK</label><input id="e-nik" class="form-control" value="${d.NIK_Anggota||''}"></div>
-                   <div class="swal-form-group"><label class="swal-form-label">Hubungan</label><select id="e-hub" class="form-select"><option value="Suami" ${d.Hubungan==='Suami'?'selected':''}>Suami</option><option value="Istri" ${d.Hubungan==='Istri'?'selected':''}>Istri</option><option value="Anak" ${d.Hubungan==='Anak'?'selected':''}>Anak</option></select></div>
-                   <div class="swal-form-group"><label class="swal-form-label">JK</label><select id="e-jk" class="form-select"><option value="L" ${d.JK==='L'?'selected':''}>L</option><option value="P" ${d.JK==='P'?'selected':''}>P</option></select></div>
-                   <div class="swal-form-group"><label class="swal-form-label">Tgl Lahir</label><input type="date" id="e-tgl" class="form-control" value="${d.Tgl_Lahir||''}"></div>
-                   <div class="swal-form-group"><label class="swal-form-label">Tunjangan</label><select id="e-tunj" class="form-select"><option value="Ya" ${d.Tunjangan==='Ya'?'selected':''}>Ya</option><option value="Tidak" ${d.Tunjangan==='Tidak'?'selected':''}>Tidak</option></select></div>`;
-            } else if(t==='tb_kartu') {
-                 h=`<div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="e-jenis" class="form-select"><option value="BPJS" ${d.Jenis_Kartu==='BPJS'?'selected':''}>BPJS</option><option value="NPWP" ${d.Jenis_Kartu==='NPWP'?'selected':''}>NPWP</option><option value="Karpeg" ${d.Jenis_Kartu==='Karpeg'?'selected':''}>Karpeg</option><option value="Taspen" ${d.Jenis_Kartu==='Taspen'?'selected':''}>Taspen</option></select></div>
-                    <div class="swal-form-group"><label class="swal-form-label">Nomor</label><input id="e-nomor" class="form-control" value="${d.No_Kartu||''}"></div>`;
-            }
+            if(t==='tb_pangkat') h=`<div class="swal-form-group"><label class="swal-form-label">Golongan</label><input id="e-gol" class="form-control" value="${d.Golongan||''}"></div><div class="swal-form-group"><label class="swal-form-label">Pangkat</label><input id="e-pangkat" class="form-control" value="${d.Pangkat||''}"></div><div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="e-nosk" class="form-control" value="${d.No_SK||''}"></div><div class="swal-form-group"><label class="swal-form-label">Tgl SK</label><input type="date" id="e-tglsk" class="form-control" value="${d.Tgl_SK||''}"></div><div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="e-tmt" class="form-control" value="${d.TMT||''}"></div>`;
+            else if(t==='tb_jabatan') h=`<div class="swal-form-group"><label class="swal-form-label">Jabatan</label><input id="e-jab" class="form-control" value="${d.Nama_Jabatan||''}"></div><div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="e-jenis" class="form-select"><option value="Struktural" ${d.Jenis_Jabatan==='Struktural'?'selected':''}>Struktural</option><option value="Fungsional" ${d.Jenis_Jabatan==='Fungsional'?'selected':''}>Fungsional</option><option value="Pelaksana" ${d.Jenis_Jabatan==='Pelaksana'?'selected':''}>Pelaksana</option></select></div><div class="swal-form-group"><label class="swal-form-label">Eselon</label><input id="e-eselon" class="form-control" value="${d.Eselon||''}"></div><div class="swal-form-group"><label class="swal-form-label">Unit</label><input id="e-unit" class="form-control" value="${d.Unit_Kerja||''}"></div><div class="swal-form-group"><label class="swal-form-label">No SK</label><input id="e-nosk" class="form-control" value="${d.No_SK||''}"></div><div class="swal-form-group"><label class="swal-form-label">TMT</label><input type="date" id="e-tmt" class="form-control" value="${d.TMT||''}"></div>`;
+            else if(t==='tb_keluarga') h=`<div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="e-nama" class="form-control" value="${d.Nama||''}"></div><div class="swal-form-group"><label class="swal-form-label">NIK</label><input id="e-nik" class="form-control" value="${d.NIK_Anggota||''}"></div><div class="swal-form-group"><label class="swal-form-label">Hubungan</label><select id="e-hub" class="form-select"><option value="Suami" ${d.Hubungan==='Suami'?'selected':''}>Suami</option><option value="Istri" ${d.Hubungan==='Istri'?'selected':''}>Istri</option><option value="Anak" ${d.Hubungan==='Anak'?'selected':''}>Anak</option></select></div><div class="swal-form-group"><label class="swal-form-label">JK</label><select id="e-jk" class="form-select"><option value="L" ${d.JK==='L'?'selected':''}>L</option><option value="P" ${d.JK==='P'?'selected':''}>P</option></select></div><div class="swal-form-group"><label class="swal-form-label">Tgl Lahir</label><input type="date" id="e-tgl" class="form-control" value="${d.Tgl_Lahir||''}"></div><div class="swal-form-group"><label class="swal-form-label">Tunjangan</label><select id="e-tunj" class="form-select"><option value="Ya" ${d.Tunjangan==='Ya'?'selected':''}>Ya</option><option value="Tidak" ${d.Tunjangan==='Tidak'?'selected':''}>Tidak</option></select></div>`;
+            else if(t==='tb_kartu') h=`<div class="swal-form-group"><label class="swal-form-label">Jenis</label><select id="e-jenis" class="form-select"><option value="BPJS" ${d.Jenis_Kartu==='BPJS'?'selected':''}>BPJS</option><option value="NPWP" ${d.Jenis_Kartu==='NPWP'?'selected':''}>NPWP</option><option value="Karpeg" ${d.Jenis_Kartu==='Karpeg'?'selected':''}>Karpeg</option><option value="Taspen" ${d.Jenis_Kartu==='Taspen'?'selected':''}>Taspen</option></select></div><div class="swal-form-group"><label class="swal-form-label">Nomor</label><input id="e-nomor" class="form-control" value="${d.No_Kartu||''}"></div>`;
             
             const {value:v}=await Swal.fire({title:'Edit Arsip',html:h,showCancelButton:true,confirmButtonText:'Update',preConfirm:()=>{
                 if(t==='tb_pangkat') return {Golongan:document.getElementById('e-gol').value, Pangkat:document.getElementById('e-pangkat').value, No_SK:document.getElementById('e-nosk').value, Tgl_SK:document.getElementById('e-tglsk').value, TMT:document.getElementById('e-tmt').value};
@@ -537,10 +330,7 @@
                 if(t==='tb_keluarga') return {Nama:document.getElementById('e-nama').value, NIK_Anggota:document.getElementById('e-nik').value, Hubungan:document.getElementById('e-hub').value, JK:document.getElementById('e-jk').value, Tgl_Lahir:document.getElementById('e-tgl').value, Tunjangan:document.getElementById('e-tunj').value};
                 return {Jenis_Kartu:document.getElementById('e-jenis').value, No_Kartu:document.getElementById('e-nomor').value};
             }});
-            if(v) {
-                v.Link_File = d.Link_File; 
-                saveData(t, v, d.ID, d.NIK||d.NIK_Pegawai);
-            }
+            if(v) {v.Link_File = d.Link_File; saveData(t, v, d.ID, d.NIK||d.NIK_Pegawai);}
         }
 
         function upVB(t){const c=document.querySelectorAll(`.cb-${t}:checked`).length;document.getElementById(`btn-v-${t}`).disabled=c===0}
