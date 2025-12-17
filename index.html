@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMPEG RSUD dr. R. Koesma</title>
+    <!-- Dependencies -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <style>
+        :root { --primary: #005A9C; --secondary: #004080; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; }
+        
+        /* Layout */
+        .sidebar { min-height: 100vh; width: 260px; background: var(--primary); color: white; position: fixed; transition: all 0.3s; z-index: 1000; }
+        .sidebar .nav-link { color: rgba(255,255,255,0.8); margin: 5px 15px; border-radius: 8px; font-weight: 500; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { background: rgba(255,255,255,0.15); color: white; transform: translateX(5px); }
+        .sidebar .nav-link i { width: 25px; }
+        .main-content { margin-left: 260px; padding: 25px; transition: all 0.3s; }
+        
+        /* Mobile */
+        @media (max-width: 768px) {
+            .sidebar { margin-left: -260px; }
+            .sidebar.active { margin-left: 0; }
+            .main-content { margin-left: 0; }
+        }
+
+        /* Components */
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
+        .status-badge-DRAFT { background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; border: 1px solid #ffeeba; }
+        .status-badge-VERIFIED { background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; border: 1px solid #c3e6cb; }
+        
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; }
+    </style>
+</head>
+<body>
+
+    <!-- LOADING -->
+    <div id="loading" class="loading-overlay">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+        <h5 class="mt-3 text-primary fw-bold">Memproses Data...</h5>
+    </div>
+
+    <!-- 1. LOGIN SECTION -->
+    <div id="app-login" class="container h-100 d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+        <div class="card p-4 shadow-lg" style="width: 100%; max-width: 400px;">
+            <div class="text-center mb-4">
+                <img src="https://raw.githubusercontent.com/srpcom/koesmaparkir/main/new%20logo%20rsud%202025%20kecil.png" width="80" class="mb-3">
+                <h4 class="fw-bold text-primary">SIMPEG RSUD</h4>
+                <p class="text-muted small">Sistem Informasi Kepegawaian</p>
+            </div>
+
+            <!-- Tabs Login/Register -->
+            <ul class="nav nav-pills nav-fill mb-3" id="pills-tab">
+                <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#login-tab">Login</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#reg-tab">Daftar</button></li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- FORM LOGIN -->
+                <div class="tab-pane fade show active" id="login-tab">
+                    <form onsubmit="handleLogin(event)">
+                        <div class="mb-3"><input type="number" id="l-nik" class="form-control" placeholder="NIK" required></div>
+                        <div class="mb-3"><input type="password" id="l-pass" class="form-control" placeholder="Password" required></div>
+                        <button type="submit" class="btn btn-primary w-100 mb-3">Masuk</button>
+                    </form>
+                    <div class="text-center">
+                        <small class="text-muted">Atau masuk dengan</small>
+                        <div class="mt-2 d-flex justify-content-center">
+                            <div id="g_id_onload" data-client_id="783459415718-mp0vsmd2lopajf2ut0aqc6drjrs95pu8.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
+                            <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="outline" data-text="signin_with" data-size="large"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORM REGISTER -->
+                <div class="tab-pane fade" id="reg-tab">
+                    <form onsubmit="handleRegister(event)">
+                        <div class="mb-3"><input type="number" id="r-nik" class="form-control" placeholder="NIK (KTP)" required minlength="16"></div>
+                        <div class="mb-3"><input type="text" id="r-nama" class="form-control" placeholder="Nama Lengkap (Sesuai KTP)" required></div>
+                        <div class="mb-3">
+                            <input type="password" id="r-pass" class="form-control" placeholder="Password (Min 6 Karakter)" required minlength="6">
+                            <small class="text-muted" style="font-size: 0.7em;">* Kombinasi Huruf & Angka</small>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Daftar Akun</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MAIN APP SECTION -->
+    <div id="app-main" class="d-none">
+        
+        <!-- Sidebar -->
+        <div class="sidebar d-flex flex-column p-3" id="sidebar">
+            <div class="text-center mb-4 text-white">
+                <img src="https://raw.githubusercontent.com/srpcom/koesmaparkir/main/new%20logo%20rsud%202025%20kecil.png" width="50" class="bg-white rounded-circle p-1 mb-2">
+                <h6 class="fw-bold mb-0">SIMPEG RSUD</h6>
+                <small id="user-display-name" class="text-white-50">User</small>
+            </div>
+            <ul class="nav flex-column mb-auto">
+                <li class="nav-item"><a href="#" class="nav-link active" onclick="navTo('profil')"><i class="fas fa-user-circle"></i> Profil Pegawai</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" onclick="navTo('pangkat')"><i class="fas fa-medal"></i> Riwayat Pangkat</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" onclick="navTo('jabatan')"><i class="fas fa-briefcase"></i> Riwayat Jabatan</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" onclick="navTo('keluarga')"><i class="fas fa-users"></i> Anggota Keluarga</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" onclick="navTo('kartu')"><i class="fas fa-id-card"></i> Data Kartu</a></li>
+                <li class="nav-item d-none" id="menu-admin"><a href="#" class="nav-link bg-danger text-white mt-3" onclick="navTo('admin')"><i class="fas fa-user-shield"></i> Admin Dashboard</a></li>
+            </ul>
+            <div class="mt-auto">
+                <button onclick="logout()" class="btn btn-outline-light w-100"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="main-content" id="main-content">
+            <!-- Mobile Toggle -->
+            <button class="btn btn-primary d-md-none mb-3" onclick="document.getElementById('sidebar').classList.toggle('active')">
+                <i class="fas fa-bars"></i> Menu
+            </button>
+
+            <!-- Dynamic Views -->
+            <div id="view-container">
+                <!-- Views will be injected here via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Javascript Logic -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ==========================================
+        // CONFIG & STATE
+        // ==========================================
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwgNdoZPiFJNdbM8tBmx1lGwonOj92sI8fgYUvEjR_x2Q-nwq9z_vkTq1MqMZG1MTAO/exec'; 
+        let currentUser = null;
+        let appData = {}; // Cache data
+
+        // ==========================================
+        // AUTH FUNCTIONS
+        // ==========================================
+        function toggleLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const nik = document.getElementById('l-nik').value;
+            const pass = document.getElementById('l-pass').value;
+            
+            toggleLoading(true);
+            const res = await fetchGAS({ action: 'login', nik, password: pass });
+            toggleLoading(false);
+
+            if (res.status === 'success') {
+                loginSuccess(res.user);
+            } else {
+                Swal.fire('Gagal', res.message, 'error');
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const nik = document.getElementById('r-nik').value;
+            const nama = document.getElementById('r-nama').value;
+            const pass = document.getElementById('r-pass').value;
+            
+            // Regex validation (Huruf & Angka)
+            if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(pass)) {
+                Swal.fire('Password Lemah', 'Password harus minimal 6 karakter dan mengandung huruf serta angka.', 'warning');
+                return;
+            }
+
+            toggleLoading(true);
+            const res = await fetchGAS({ action: 'register', nik, nama, password: pass });
+            toggleLoading(false);
+
+            if (res.status === 'success') {
+                Swal.fire('Berhasil', 'Akun dibuat. Silakan login.', 'success');
+                document.querySelector('[data-bs-target="#login-tab"]').click();
+            } else {
+                Swal.fire('Gagal', res.message, 'error');
+            }
+        }
+
+        function handleCredentialResponse(response) {
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            toggleLoading(true);
+            fetchGAS({ action: 'google_login', email: payload.email }).then(res => {
+                toggleLoading(false);
+                if (res.status === 'success') loginSuccess(res.user);
+                else Swal.fire('Akses Ditolak', res.message, 'error');
+            });
+        }
+
+        function loginSuccess(user) {
+            currentUser = user;
+            sessionStorage.setItem('simpeg_user', JSON.stringify(user));
+            
+            // Check Admin Access Logic
+            if(window.location.hash === '#admin' && user.role !== 'ADMIN') {
+                Swal.fire('Akses Ditolak', 'Anda bukan Admin.', 'warning');
+                window.location.hash = '';
+            }
+
+            initApp();
+        }
+
+        function logout() {
+            sessionStorage.removeItem('simpeg_user');
+            window.location.reload();
+        }
+
+        // ==========================================
+        // MAIN APP LOGIC
+        // ==========================================
+        async function initApp() {
+            document.getElementById('app-login').classList.add('d-none');
+            document.getElementById('app-main').classList.remove('d-none');
+            document.getElementById('user-display-name').innerText = currentUser.nama;
+            
+            if (currentUser.role === 'ADMIN') document.getElementById('menu-admin').classList.remove('d-none');
+
+            // Load Initial Data
+            toggleLoading(true);
+            const res = await fetchGAS({ action: 'get_data', nik: currentUser.nik });
+            toggleLoading(false);
+
+            if (res.status === 'success') {
+                appData = res.data;
+                // Jika URL ada #admin dan user admin, load admin view
+                if (window.location.hash === '#admin' && currentUser.role === 'ADMIN') navTo('admin');
+                else navTo('profil');
+            }
+        }
+
+        function navTo(page) {
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            // Highlight menu
+            const menu = document.querySelector(`[onclick="navTo('${page}')"]`);
+            if(menu) menu.classList.add('active');
+
+            const container = document.getElementById('view-container');
+            
+            if (page === 'profil') renderProfil(container);
+            else if (page === 'pangkat') renderTable(container, 'Riwayat Pangkat', appData.tb_pangkat, 'tb_pangkat');
+            else if (page === 'jabatan') renderTable(container, 'Riwayat Jabatan', appData.tb_jabatan, 'tb_jabatan');
+            else if (page === 'keluarga') renderTable(container, 'Anggota Keluarga', appData.tb_keluarga, 'tb_keluarga');
+            else if (page === 'kartu') renderTable(container, 'Data Kartu Identitas', appData.tb_kartu, 'tb_kartu');
+            else if (page === 'admin') renderAdminDashboard(container);
+        }
+
+        // ==========================================
+        // RENDERERS (VIEW)
+        // ==========================================
+        
+        // 1. PROFIL VIEW
+        function renderProfil(container) {
+            const p = appData.profil || {};
+            const statusBadge = `<span class="status-badge-${p.Status_Verifikasi || 'DRAFT'}">${p.Status_Verifikasi || 'DRAFT'}</span>`;
+            
+            container.innerHTML = `
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                        <h4 class="fw-bold text-primary mb-0">Profil Pegawai</h4>
+                        <div>${statusBadge} <button onclick="editProfil()" class="btn btn-sm btn-primary ms-2"><i class="fas fa-edit"></i> Edit Data</button></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <img src="${p.Foto_Profil || 'https://via.placeholder.com/150'}" class="img-thumbnail rounded-circle mb-2" style="width: 150px; height: 150px; object-fit: cover;">
+                            <h5 class="fw-bold">${p.Nama}</h5>
+                            <p class="text-muted">${p.NIP || '-'}</p>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="row g-3">
+                                <div class="col-md-6"><label class="small text-muted">NIK</label><p class="fw-bold">${p.NIK}</p></div>
+                                <div class="col-md-6"><label class="small text-muted">Tempat, Tgl Lahir</label><p class="fw-bold">${p.Tmp_Lahir || '-'}, ${p.Tgl_Lahir || '-'}</p></div>
+                                <div class="col-md-6"><label class="small text-muted">Jenis Kelamin</label><p class="fw-bold">${p.JK || '-'}</p></div>
+                                <div class="col-md-6"><label class="small text-muted">Agama</label><p class="fw-bold">${p.Agama || '-'}</p></div>
+                                <div class="col-md-6"><label class="small text-muted">No HP</label><p class="fw-bold">${p.No_HP || '-'}</p></div>
+                                <div class="col-md-6"><label class="small text-muted">Email</label><p class="fw-bold">${p.Email || '-'}</p></div>
+                                <div class="col-md-12"><label class="small text-muted">Alamat Domisili</label><p class="fw-bold">${p.Alamat || '-'}</p></div>
+                                <div class="col-md-6"><label class="small text-muted">Pendidikan Terakhir</label><p class="fw-bold">${p.Pendidikan || '-'}</p></div>
+                                <div class="col-md-6"><label class="small text-muted">Jabatan Terakhir</label><p class="fw-bold">${p.Jabatan_Terakhir || '-'}</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function editProfil() {
+            const p = appData.profil || {};
+            const { value: formValues } = await Swal.fire({
+                title: 'Edit Profil',
+                html: `
+                    <input id="sw-nip" class="swal2-input" placeholder="NIP" value="${p.NIP||''}">
+                    <input id="sw-nama" class="swal2-input" placeholder="Nama Lengkap" value="${p.Nama||''}">
+                    <div class="d-flex gap-2 mx-5 mt-3">
+                        <input id="sw-tmp" class="form-control" placeholder="Tempat Lahir" value="${p.Tmp_Lahir||''}">
+                        <input id="sw-tgl" class="form-control" type="date" value="${p.Tgl_Lahir||''}">
+                    </div>
+                    <select id="sw-jk" class="swal2-select" style="width:80%; margin: 10px auto; display:block;">
+                        <option value="L" ${p.JK=='L'?'selected':''}>Laki-laki</option>
+                        <option value="P" ${p.JK=='P'?'selected':''}>Perempuan</option>
+                    </select>
+                    <input id="sw-hp" class="swal2-input" placeholder="Nomor HP" value="${p.No_HP||''}">
+                    <input id="sw-alamat" class="swal2-input" placeholder="Alamat Domisili" value="${p.Alamat||''}">
+                    <input id="sw-pend" class="swal2-input" placeholder="Pendidikan Terakhir" value="${p.Pendidikan||''}">
+                    <input id="sw-jab" class="swal2-input" placeholder="Jabatan Terakhir" value="${p.Jabatan_Terakhir||''}">
+                    <div class="mx-5 mt-3 text-start"><label class="small">Upload Foto Profil Baru</label><input type="file" id="sw-foto" class="form-control"></div>
+                `,
+                width: '600px',
+                showCancelButton: true,
+                confirmButtonText: 'Simpan',
+                preConfirm: async () => {
+                    const fileInput = document.getElementById('sw-foto').files[0];
+                    let fotoUrl = p.Foto_Profil;
+                    
+                    if (fileInput) {
+                        const base64 = await toBase64(fileInput);
+                        const upRes = await fetchGAS({ action: 'upload_file', base64: base64.split(',')[1], mimeType: fileInput.type, nik: currentUser.nik, type: 'FOTO' });
+                        if(upRes.status === 'success') fotoUrl = upRes.url;
+                    }
+
+                    return {
+                        NIP: document.getElementById('sw-nip').value,
+                        Nama: document.getElementById('sw-nama').value,
+                        Tmp_Lahir: document.getElementById('sw-tmp').value,
+                        Tgl_Lahir: document.getElementById('sw-tgl').value,
+                        JK: document.getElementById('sw-jk').value,
+                        No_HP: document.getElementById('sw-hp').value,
+                        Alamat: document.getElementById('sw-alamat').value,
+                        Pendidikan: document.getElementById('sw-pend').value,
+                        Jabatan_Terakhir: document.getElementById('sw-jab').value,
+                        Foto_Profil: fotoUrl
+                    };
+                }
+            });
+
+            if (formValues) {
+                saveData('tb_profil', formValues);
+            }
+        }
+
+        // 2. GENERIC TABLE RENDERER (Pangkat, Jabatan, Keluarga, Kartu)
+        function renderTable(container, title, data, tableName) {
+            let rows = '';
+            if (data && data.length > 0) {
+                data.forEach((item, index) => {
+                    const badge = `<span class="status-badge-${item.Status_Verifikasi}">${item.Status_Verifikasi}</span>`;
+                    // Custom display logic based on table
+                    let info = '';
+                    if (tableName === 'tb_pangkat') info = `<b>${item.Pangkat} (${item.Golongan})</b><br>SK: ${item.No_SK} (${item.Tgl_SK})`;
+                    else if (tableName === 'tb_jabatan') info = `<b>${item.Nama_Jabatan}</b><br>${item.Unit_Kerja}`;
+                    else if (tableName === 'tb_keluarga') info = `<b>${item.Nama}</b> (${item.Hubungan})<br>JK: ${item.JK}, Tgl Lahir: ${item.Tgl_Lahir}`;
+                    else info = `<b>${item.Jenis_Kartu}</b><br>${item.No_Kartu}`;
+
+                    const btnFile = item.Link_File ? `<a href="${item.Link_File}" target="_blank" class="btn btn-sm btn-info me-1"><i class="fas fa-file"></i></a>` : '';
+
+                    rows += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${info}</td>
+                            <td>${item.TMT || item.Tunjangan || '-'}</td>
+                            <td>${badge}</td>
+                            <td>
+                                ${btnFile}
+                                <button onclick="editData('${tableName}', '${item.ID}')" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteData('${tableName}', '${item.ID}')" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                rows = '<tr><td colspan="5" class="text-center p-4">Belum ada data.</td></tr>';
+            }
+
+            container.innerHTML = `
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold text-primary mb-0">${title}</h4>
+                        <button onclick="addData('${tableName}')" class="btn btn-primary"><i class="fas fa-plus"></i> Tambah Data</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr><th>No</th><th>Detail Data</th><th>Ket (TMT/Tunjangan)</th><th>Status</th><th>Aksi</th></tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function saveData(tableName, values, id = null) {
+            toggleLoading(true);
+            const payload = { action: 'save_data', table: tableName, values: values, nik: currentUser.nik };
+            if (id) payload.values.ID = id;
+            
+            const res = await fetchGAS(payload);
+            
+            if (res.status === 'success') {
+                // Refresh Data
+                const refresh = await fetchGAS({ action: 'get_data', nik: currentUser.nik });
+                if (refresh.status === 'success') appData = refresh.data;
+                toggleLoading(false);
+                
+                Swal.fire('Berhasil', 'Data disimpan (Menunggu Verifikasi)', 'success').then(() => {
+                    // Re-render current page
+                    if(tableName === 'tb_profil') navTo('profil');
+                    else if(tableName === 'tb_pangkat') navTo('pangkat');
+                    else if(tableName === 'tb_jabatan') navTo('jabatan');
+                    else if(tableName === 'tb_keluarga') navTo('keluarga');
+                    else if(tableName === 'tb_kartu') navTo('kartu');
+                });
+            } else {
+                toggleLoading(false);
+                Swal.fire('Error', res.message, 'error');
+            }
+        }
+
+        function deleteData(tableName, id) {
+            Swal.fire({
+                title: 'Hapus Data?', text: "Data tidak bisa dikembalikan!", icon: 'warning',
+                showCancelButton: true, confirmButtonText: 'Ya, Hapus'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    toggleLoading(true);
+                    await fetchGAS({ action: 'delete_data', table: tableName, id: id });
+                    
+                    // Refresh
+                    const refresh = await fetchGAS({ action: 'get_data', nik: currentUser.nik });
+                    appData = refresh.data;
+                    toggleLoading(false);
+                    
+                    Swal.fire('Terhapus', 'Data berhasil dihapus.', 'success');
+                    // Re-render crudely by refreshing current view based on active nav
+                    const activeNav = document.querySelector('.nav-link.active');
+                    if(activeNav) activeNav.click();
+                }
+            });
+        }
+
+        // Logic Add/Edit Pangkat/Jabatan/dll (Simplified SweetAlert Form)
+        // Note: Implementasi form lengkap bisa panjang, ini contoh generik
+        async function addData(tableName) {
+            // Contoh form dinamis sederhana
+            let htmlForm = '';
+            if (tableName === 'tb_pangkat') {
+                htmlForm = `
+                    <input id="f-gol" class="swal2-input" placeholder="Golongan (ex: III/a)">
+                    <input id="f-pangkat" class="swal2-input" placeholder="Nama Pangkat">
+                    <input id="f-nosk" class="swal2-input" placeholder="Nomor SK">
+                    <label>Tgl SK</label><input type="date" id="f-tglsk" class="swal2-input">
+                    <label>TMT</label><input type="date" id="f-tmt" class="swal2-input">
+                    <div class="mt-3"><label>Upload SK (PDF/Img)</label><input type="file" id="f-file" class="form-control"></div>
+                `;
+            } else if (tableName === 'tb_keluarga') {
+                htmlForm = `
+                    <input id="f-nama" class="swal2-input" placeholder="Nama Anggota Keluarga">
+                    <input id="f-nik" class="swal2-input" placeholder="NIK Anggota">
+                    <select id="f-hub" class="swal2-select"><option>Suami</option><option>Istri</option><option>Anak</option></select>
+                    <select id="f-jk" class="swal2-select"><option value="L">L</option><option value="P">P</option></select>
+                    <label>Tgl Lahir</label><input type="date" id="f-tgl" class="swal2-input">
+                    <select id="f-tunj" class="swal2-select"><option value="Ya">Dapat Tunjangan</option><option value="Tidak">Tidak</option></select>
+                `;
+            } 
+            // ... Tambahkan else if untuk Jabatan & Kartu sesuai kebutuhan ...
+
+            const { value: formValues } = await Swal.fire({
+                title: 'Tambah Data',
+                html: htmlForm || '<p>Form belum didefinisikan untuk demo ini.</p>',
+                showCancelButton: true,
+                preConfirm: async () => {
+                    if (!htmlForm) return null;
+                    
+                    // Logic upload file generic
+                    let fileUrl = '';
+                    const fileInput = document.getElementById('f-file');
+                    if (fileInput && fileInput.files[0]) {
+                        const base64 = await toBase64(fileInput.files[0]);
+                        const upRes = await fetchGAS({ action: 'upload_file', base64: base64.split(',')[1], mimeType: fileInput.files[0].type, nik: currentUser.nik, type: 'DOC' });
+                        if (upRes.status === 'success') fileUrl = upRes.url;
+                    }
+
+                    // Mapping Values
+                    if (tableName === 'tb_pangkat') {
+                        return { Golongan: document.getElementById('f-gol').value, Pangkat: document.getElementById('f-pangkat').value, No_SK: document.getElementById('f-nosk').value, Tgl_SK: document.getElementById('f-tglsk').value, TMT: document.getElementById('f-tmt').value, Link_File: fileUrl };
+                    } else if (tableName === 'tb_keluarga') {
+                        return { Nama: document.getElementById('f-nama').value, NIK_Anggota: document.getElementById('f-nik').value, Hubungan: document.getElementById('f-hub').value, JK: document.getElementById('f-jk').value, Tgl_Lahir: document.getElementById('f-tgl').value, Tunjangan: document.getElementById('f-tunj').value };
+                    }
+                    return {};
+                }
+            });
+
+            if (formValues) saveData(tableName, formValues);
+        }
+
+        // 3. ADMIN DASHBOARD
+        async function renderAdminDashboard(container) {
+            container.innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary"></div><p>Memuat Data Verifikasi...</p></div>`;
+            const res = await fetchGAS({ action: 'admin_get_pending' });
+            
+            if (res.status === 'success') {
+                const data = res.data;
+                let html = `<h3 class="fw-bold mb-4">Dashboard Verifikasi Admin</h3>`;
+                
+                // Helper render list
+                const renderList = (title, list, table) => {
+                    if (list.length === 0) return '';
+                    let items = list.map(item => `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${item.Nama || item.Nama_Jabatan || item.Pangkat || item.Jenis_Kartu}</strong> 
+                                <span class="badge bg-secondary">${item.NIK || item.NIK_Pegawai}</span>
+                                <br><small class="text-muted">Data: ${JSON.stringify(item).substring(0, 50)}...</small>
+                            </div>
+                            <button onclick="verifyItem('${table}', '${item.ID || item.NIK}')" class="btn btn-sm btn-success">Verifikasi</button>
+                        </li>
+                    `).join('');
+                    return `<div class="card mb-3"><div class="card-header bg-warning text-dark fw-bold">${title} (${list.length})</div><ul class="list-group list-group-flush">${items}</ul></div>`;
+                };
+
+                html += renderList('Profil Pending', data.tb_profil, 'tb_profil');
+                html += renderList('Riwayat Pangkat', data.tb_pangkat, 'tb_pangkat');
+                html += renderList('Riwayat Jabatan', data.tb_jabatan, 'tb_jabatan');
+                
+                if (html === `<h3 class="fw-bold mb-4">Dashboard Verifikasi Admin</h3>`) html += `<div class="alert alert-success">Semua data sudah diverifikasi!</div>`;
+                
+                container.innerHTML = html;
+            }
+        }
+
+        async function verifyItem(table, id) {
+            toggleLoading(true);
+            const res = await fetchGAS({ action: 'admin_verify', table, id });
+            toggleLoading(false);
+            if (res.status === 'success') {
+                Swal.fire('Sukses', 'Data terverifikasi', 'success');
+                navTo('admin'); // Refresh
+            }
+        }
+
+        // ==========================================
+        // UTILS
+        // ==========================================
+        async function fetchGAS(payload) {
+            // Gunakan metode POST text/plain untuk menghindari CORS preflight issues di GAS
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            return await response.json();
+        }
+
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+
+        // INIT CHECK
+        const sessUser = sessionStorage.getItem('simpeg_user');
+        if (sessUser) {
+            currentUser = JSON.parse(sessUser);
+            initApp();
+        }
+
+    </script>
+</body>
+</html>
