@@ -258,6 +258,17 @@
                 reader.onerror = error => reject(error);
             });
         }
+        
+        // [NEW] Helper untuk Format Tanggal Tampilan (DD-MM-YYYY)
+        function formatDateDisplay(d) {
+            if(!d) return '-';
+            const date = new Date(d);
+            if(isNaN(date.getTime())) return d; // Jika bukan tanggal, kembalikan aslinya
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
 
         function switchAuthMode(mode) {
             const loginView = document.getElementById('view-auth-login');
@@ -352,8 +363,10 @@
             const pe=p.Email?.toLowerCase().trim(); 
             const en= (pe&&l&&pe===l) ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size:0.7em"><i class="fas fa-check-circle"></i> Login OK</span>' : '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25" style="font-size:0.7em"><i class="fas fa-info-circle"></i> Kontak Saja</span>'; 
             
-            // Tampilan profil dengan NIP
-            c.innerHTML=`<div class="card p-4"><div class="d-flex justify-content-between mb-4 border-bottom pb-3"><h4 class="fw-bold text-primary mb-0">Profil Pegawai</h4><div><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi||'DRAFT'}</span><button onclick="editProfil()" class="btn btn-sm btn-primary ms-1"><i class="fas fa-edit"></i> Edit</button><button onclick="changePassword()" class="btn btn-sm btn-warning ms-1"><i class="fas fa-key"></i> Pass</button></div></div><div class="row"><div class="col-md-3 text-center mb-3"><img src="${url}" class="img-thumbnail rounded-circle mb-2" style="width:150px;height:150px;object-fit:cover"><h5 class="fw-bold">${p.Nama||'Nama Pegawai'}</h5><p class="text-muted">${p.NIP||'-'}</p></div><div class="col-md-9"><div class="row g-3"><div class="col-md-6"><label class="small text-muted">NIK</label><p class="fw-bold">${p.NIK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">NIP</label><p class="fw-bold">${p.NIP||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Tgl Lahir</label><p class="fw-bold">${p.Tmp_Lahir||''}, ${p.Tgl_Lahir||'-'}</p></div><div class="col-md-6"><label class="small text-muted">JK</label><p class="fw-bold">${p.JK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Email Kontak</label><p class="fw-bold mb-1">${p.Email||'-'}</p>${en}</div><div class="col-md-6"><label class="small text-muted">HP</label><p class="fw-bold">${p.No_HP||'-'}</p></div><div class="col-md-12"><label class="small text-muted">Alamat</label><p class="fw-bold">${p.Alamat||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Pendidikan</label><p class="fw-bold">${p.Pendidikan||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Jabatan</label><p class="fw-bold">${p.Jabatan_Terakhir||'-'}</p></div></div></div></div></div>`; 
+            // [MODIFIED] Using formatDateDisplay for nicely formatted date
+            const formattedTgl = formatDateDisplay(p.Tgl_Lahir);
+
+            c.innerHTML=`<div class="card p-4"><div class="d-flex justify-content-between mb-4 border-bottom pb-3"><h4 class="fw-bold text-primary mb-0">Profil Pegawai</h4><div><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi||'DRAFT'}</span><button onclick="editProfil()" class="btn btn-sm btn-primary ms-1"><i class="fas fa-edit"></i> Edit</button><button onclick="changePassword()" class="btn btn-sm btn-warning ms-1"><i class="fas fa-key"></i> Pass</button></div></div><div class="row"><div class="col-md-3 text-center mb-3"><img src="${url}" class="img-thumbnail rounded-circle mb-2" style="width:150px;height:150px;object-fit:cover"><h5 class="fw-bold">${p.Nama||'Nama Pegawai'}</h5><p class="text-muted">${p.NIP||'-'}</p></div><div class="col-md-9"><div class="row g-3"><div class="col-md-6"><label class="small text-muted">NIK</label><p class="fw-bold">${p.NIK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">NIP</label><p class="fw-bold">${p.NIP||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Tgl Lahir</label><p class="fw-bold">${p.Tmp_Lahir||''}, ${formattedTgl}</p></div><div class="col-md-6"><label class="small text-muted">JK</label><p class="fw-bold">${p.JK||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Email Kontak</label><p class="fw-bold mb-1">${p.Email||'-'}</p>${en}</div><div class="col-md-6"><label class="small text-muted">HP</label><p class="fw-bold">${p.No_HP||'-'}</p></div><div class="col-md-12"><label class="small text-muted">Alamat</label><p class="fw-bold">${p.Alamat||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Pendidikan</label><p class="fw-bold">${p.Pendidikan||'-'}</p></div><div class="col-md-6"><label class="small text-muted">Jabatan</label><p class="fw-bold">${p.Jabatan_Terakhir||'-'}</p></div></div></div></div></div>`; 
         }
         
         async function editProfil() { 
