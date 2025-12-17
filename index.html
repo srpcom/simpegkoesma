@@ -35,6 +35,10 @@
         .status-badge-VERIFIED { background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; border: 1px solid #c3e6cb; }
         
         .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        
+        /* Admin specific */
+        .admin-toolbar { position: sticky; top: 0; z-index: 900; background: white; padding: 15px; border-bottom: 1px solid #eee; margin: -1rem -1rem 1rem -1rem; display: flex; justify-content: space-between; align-items: center; }
+        .table-admin th { background: #f8f9fa; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
@@ -138,7 +142,9 @@
         // ==========================================
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbwgNdoZPiFJNdbM8tBmx1lGwonOj92sI8fgYUvEjR_x2Q-nwq9z_vkTq1MqMZG1MTAO/exec'; 
         let currentUser = null;
-        let appData = {}; // Cache data
+        let appData = {}; // Cache data user
+        let adminData = {}; // Cache data admin (Pending lists)
+        let selectedIds = []; // Untuk Bulk Verify
 
         // ==========================================
         // AUTH FUNCTIONS
@@ -167,7 +173,6 @@
             const nama = document.getElementById('r-nama').value;
             const pass = document.getElementById('r-pass').value;
             
-            // Regex validation (Huruf & Angka)
             if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(pass)) {
                 Swal.fire('Password Lemah', 'Password harus minimal 6 karakter dan mengandung huruf serta angka.', 'warning');
                 return;
@@ -198,13 +203,10 @@
         function loginSuccess(user) {
             currentUser = user;
             sessionStorage.setItem('simpeg_user', JSON.stringify(user));
-            
-            // Check Admin Access Logic
             if(window.location.hash === '#admin' && user.role !== 'ADMIN') {
                 Swal.fire('Akses Ditolak', 'Anda bukan Admin.', 'warning');
                 window.location.hash = '';
             }
-
             initApp();
         }
 
@@ -223,14 +225,12 @@
             
             if (currentUser.role === 'ADMIN') document.getElementById('menu-admin').classList.remove('d-none');
 
-            // Load Initial Data
             toggleLoading(true);
             const res = await fetchGAS({ action: 'get_data', nik: currentUser.nik });
             toggleLoading(false);
 
             if (res.status === 'success') {
                 appData = res.data;
-                // Jika URL ada #admin dan user admin, load admin view
                 if (window.location.hash === '#admin' && currentUser.role === 'ADMIN') navTo('admin');
                 else navTo('profil');
             }
@@ -238,7 +238,6 @@
 
         function navTo(page) {
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-            // Highlight menu
             const menu = document.querySelector(`[onclick="navTo('${page}')"]`);
             if(menu) menu.classList.add('active');
 
@@ -249,12 +248,256 @@
             else if (page === 'jabatan') renderTable(container, 'Riwayat Jabatan', appData.tb_jabatan, 'tb_jabatan');
             else if (page === 'keluarga') renderTable(container, 'Anggota Keluarga', appData.tb_keluarga, 'tb_keluarga');
             else if (page === 'kartu') renderTable(container, 'Data Kartu Identitas', appData.tb_kartu, 'tb_kartu');
-            else if (page === 'admin') renderAdminDashboard(container);
+            else if (page === 'admin') renderAdminDashboardV2(container);
         }
 
         // ==========================================
-        // RENDERERS (VIEW)
+        // ADMIN DASHBOARD V2 (TABS & BULK VERIFY)
         // ==========================================
+        function renderAdminDashboardV2(container) {
+            container.innerHTML = `
+                <div class="card p-4">
+                    <h3 class="fw-bold mb-4 text-primary"><i class="fas fa-user-shield"></i> Admin Dashboard</h3>
+                    
+                    <ul class="nav nav-tabs mb-4" id="adminTabs">
+                        <li class="nav-item"><button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#tab-antrean" onclick="loadAdminAntrean()">Antrean Verifikasi</button></li>
+                        <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#tab-master" onclick="loadAdminMaster()">Master Data Pegawai</button></li>
+                        <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#tab-arsip" onclick="loadAdminArsip()">Arsip Data</button></li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- TAB 1: ANTREAN -->
+                        <div class="tab-pane fade show active" id="tab-antrean">
+                            <div class="alert alert-info small"><i class="fas fa-info-circle"></i> Centang data untuk melakukan verifikasi massal.</div>
+                            <div id="antrean-content" class="mt-3 text-center"><div class="spinner-border text-primary"></div></div>
+                        </div>
+
+                        <!-- TAB 2: MASTER PEGAWAI -->
+                        <div class="tab-pane fade" id="tab-master">
+                            <div class="d-flex justify-content-between mb-3">
+                                <input type="text" id="search-master" class="form-control w-50" placeholder="Cari Nama / NIP..." onkeyup="filterMasterTable()">
+                                <button class="btn btn-outline-primary" onclick="loadAdminMaster()"><i class="fas fa-sync"></i> Refresh</button>
+                            </div>
+                            <div id="master-content" class="table-responsive"></div>
+                        </div>
+
+                        <!-- TAB 3: ARSIP DATA -->
+                        <div class="tab-pane fade" id="tab-arsip">
+                            <div class="d-flex gap-3 mb-3 align-items-center">
+                                <select id="arsip-type" class="form-select w-auto" onchange="loadAdminArsipTable()">
+                                    <option value="tb_pangkat">Riwayat Pangkat</option>
+                                    <option value="tb_jabatan">Riwayat Jabatan</option>
+                                    <option value="tb_keluarga">Anggota Keluarga</option>
+                                    <option value="tb_kartu">Kartu Identitas</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="loadAdminArsipTable()">Muat Data</button>
+                            </div>
+                            <div id="arsip-content" class="table-responsive"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            loadAdminAntrean(); // Default load
+        }
+
+        // --- ADMIN LOGIC: ANTREAN (PENDING) ---
+        async function loadAdminAntrean() {
+            const content = document.getElementById('antrean-content');
+            content.innerHTML = '<div class="spinner-border text-primary"></div>';
+            
+            const res = await fetchGAS({ action: 'admin_get_pending' });
+            if(res.status === 'success') {
+                adminData = res.data;
+                renderAntreanTables(content);
+            } else {
+                content.innerHTML = `<div class="alert alert-danger">${res.message}</div>`;
+            }
+        }
+
+        function renderAntreanTables(container) {
+            let html = '';
+            const tables = [
+                { id: 'tb_profil', label: 'Update Profil' },
+                { id: 'tb_pangkat', label: 'Riwayat Pangkat' },
+                { id: 'tb_jabatan', label: 'Riwayat Jabatan' },
+                { id: 'tb_keluarga', label: 'Data Keluarga' },
+                { id: 'tb_kartu', label: 'Data Kartu' }
+            ];
+
+            let hasData = false;
+            tables.forEach(t => {
+                const list = adminData[t.id] || [];
+                if(list.length > 0) {
+                    hasData = true;
+                    html += `
+                        <div class="card mb-4 border shadow-sm">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 fw-bold text-primary">${t.label} (${list.length})</h6>
+                                <button class="btn btn-sm btn-success" onclick="execBulkVerify('${t.id}')" id="btn-verify-${t.id}" disabled>
+                                    <i class="fas fa-check-double"></i> Verifikasi Terpilih (0)
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0 align-middle table-admin">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40px;"><input type="checkbox" onchange="toggleSelectAll('${t.id}', this)"></th>
+                                            <th>Identitas (NIK/Nama)</th>
+                                            <th>Detail Data</th>
+                                            <th>Dokumen</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+                    list.forEach(item => {
+                        const itemId = item.ID || item.NIK; // Profil uses NIK as Key
+                        const userIdent = `<b>${item.Nama || '-'}</b><br><span class="text-muted small">${item.NIK || item.NIK_Pegawai}</span>`;
+                        const detail = `<small>${JSON.stringify(item).slice(0, 100)}...</small>`; // Simplifikasi view
+                        const doc = item.Link_File ? `<a href="${item.Link_File}" target="_blank" class="btn btn-xs btn-outline-info"><i class="fas fa-file"></i></a>` : '-';
+                        
+                        html += `
+                            <tr>
+                                <td><input type="checkbox" class="cb-${t.id}" value="${itemId}" onchange="updateVerifyBtn('${t.id}')"></td>
+                                <td>${userIdent}</td>
+                                <td>${detail}</td>
+                                <td>${doc}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table></div></div>`;
+                }
+            });
+
+            if(!hasData) html = `<div class="text-center py-5 text-muted"><i class="fas fa-check-circle fa-3x mb-3 text-success"></i><br>Tidak ada antrean verifikasi.</div>`;
+            container.innerHTML = html;
+        }
+
+        function toggleSelectAll(tableId, source) {
+            document.querySelectorAll(`.cb-${tableId}`).forEach(cb => cb.checked = source.checked);
+            updateVerifyBtn(tableId);
+        }
+
+        function updateVerifyBtn(tableId) {
+            const count = document.querySelectorAll(`.cb-${tableId}:checked`).length;
+            const btn = document.getElementById(`btn-verify-${tableId}`);
+            btn.innerHTML = `<i class="fas fa-check-double"></i> Verifikasi Terpilih (${count})`;
+            btn.disabled = count === 0;
+        }
+
+        async function execBulkVerify(tableId) {
+            const checkboxes = document.querySelectorAll(`.cb-${tableId}:checked`);
+            const ids = Array.from(checkboxes).map(cb => cb.value);
+            
+            if(ids.length === 0) return;
+
+            const confirm = await Swal.fire({
+                title: 'Verifikasi Massal?',
+                text: `Anda akan memverifikasi ${ids.length} data.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Verifikasi'
+            });
+
+            if(confirm.isConfirmed) {
+                toggleLoading(true);
+                const res = await fetchGAS({ action: 'admin_bulk_verify', table: tableId, ids: ids });
+                toggleLoading(false);
+                
+                if(res.status === 'success') {
+                    Swal.fire('Sukses', res.message, 'success');
+                    loadAdminAntrean(); // Refresh UI
+                } else {
+                    Swal.fire('Gagal', res.message, 'error');
+                }
+            }
+        }
+
+        // --- ADMIN LOGIC: MASTER DATA ---
+        async function loadAdminMaster() {
+            const container = document.getElementById('master-content');
+            container.innerHTML = '<div class="spinner-border text-primary"></div>';
+            
+            const res = await fetchGAS({ action: 'admin_get_table', table: 'tb_profil' });
+            if(res.status === 'success') {
+                const data = res.data;
+                let rows = '';
+                data.forEach((p, idx) => {
+                    const statusClass = p.Status_Verifikasi === 'VERIFIED' ? 'success' : 'warning';
+                    rows += `
+                        <tr class="master-row">
+                            <td>${idx + 1}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="${p.Foto_Profil || 'https://via.placeholder.com/40'}" class="rounded-circle me-2" width="40" height="40">
+                                    <div>
+                                        <div class="fw-bold master-name">${p.Nama}</div>
+                                        <div class="small text-muted master-nip">${p.NIP || p.NIK}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>${p.Jabatan_Terakhir || '-'}</td>
+                            <td>${p.Unit_Kerja || '-'}</td>
+                            <td><span class="badge bg-${statusClass}">${p.Status_Verifikasi}</span></td>
+                        </tr>
+                    `;
+                });
+                
+                container.innerHTML = `
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr><th>No</th><th>Nama / NIP</th><th>Jabatan</th><th>Unit</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                `;
+            }
+        }
+
+        function filterMasterTable() {
+            const input = document.getElementById('search-master').value.toLowerCase();
+            const rows = document.querySelectorAll('.master-row');
+            rows.forEach(row => {
+                const name = row.querySelector('.master-name').innerText.toLowerCase();
+                const nip = row.querySelector('.master-nip').innerText.toLowerCase();
+                if(name.includes(input) || nip.includes(input)) row.style.display = '';
+                else row.style.display = 'none';
+            });
+        }
+
+        // --- ADMIN LOGIC: ARSIP DATA ---
+        async function loadAdminArsipTable() {
+            const table = document.getElementById('arsip-type').value;
+            const container = document.getElementById('arsip-content');
+            container.innerHTML = '<div class="spinner-border text-primary m-3"></div>';
+            
+            const res = await fetchGAS({ action: 'admin_get_table', table: table });
+            if(res.status === 'success') {
+                const data = res.data;
+                if(data.length === 0) {
+                    container.innerHTML = '<div class="alert alert-warning m-3">Tidak ada data.</div>';
+                    return;
+                }
+                
+                // Dynamic Headers
+                const headers = Object.keys(data[0]).filter(k => k !== 'ID' && k !== 'Link_File');
+                let thead = '<tr><th>No</th>' + headers.map(h => `<th>${h}</th>`).join('') + '<th>File</th><th>Status</th></tr>';
+                let tbody = '';
+                
+                data.forEach((row, idx) => {
+                    let cells = headers.map(h => `<td>${row[h]}</td>`).join('');
+                    let fileBtn = row.Link_File ? `<a href="${row.Link_File}" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-file"></i></a>` : '-';
+                    let statusBadge = `<span class="badge bg-${row.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${row.Status_Verifikasi}</span>`;
+                    tbody += `<tr><td>${idx+1}</td>${cells}<td>${fileBtn}</td><td>${statusBadge}</td></tr>`;
+                });
+                
+                container.innerHTML = `<table class="table table-sm table-striped table-bordered mt-3"><thead class="table-dark">${thead}</thead><tbody>${tbody}</tbody></table>`;
+            }
+        }
+
+        // ==========================================
+        // USER VIEW RENDERERS (UNCHANGED logic)
+        // ==========================================
+        // ... (renderProfil, editProfil, renderTable, saveData, etc. tetap sama seperti sebelumnya) ...
         
         // 1. PROFIL VIEW
         function renderProfil(container) {
@@ -345,13 +588,11 @@
             }
         }
 
-        // 2. GENERIC TABLE RENDERER (Pangkat, Jabatan, Keluarga, Kartu)
         function renderTable(container, title, data, tableName) {
             let rows = '';
             if (data && data.length > 0) {
                 data.forEach((item, index) => {
                     const badge = `<span class="status-badge-${item.Status_Verifikasi}">${item.Status_Verifikasi}</span>`;
-                    // Custom display logic based on table
                     let info = '';
                     if (tableName === 'tb_pangkat') info = `<b>${item.Pangkat} (${item.Golongan})</b><br>SK: ${item.No_SK} (${item.Tgl_SK})`;
                     else if (tableName === 'tb_jabatan') info = `<b>${item.Nama_Jabatan}</b><br>${item.Unit_Kerja}`;
@@ -400,17 +641,12 @@
             toggleLoading(true);
             const payload = { action: 'save_data', table: tableName, values: values, nik: currentUser.nik };
             if (id) payload.values.ID = id;
-            
             const res = await fetchGAS(payload);
-            
             if (res.status === 'success') {
-                // Refresh Data
                 const refresh = await fetchGAS({ action: 'get_data', nik: currentUser.nik });
                 if (refresh.status === 'success') appData = refresh.data;
                 toggleLoading(false);
-                
                 Swal.fire('Berhasil', 'Data disimpan (Menunggu Verifikasi)', 'success').then(() => {
-                    // Re-render current page
                     if(tableName === 'tb_profil') navTo('profil');
                     else if(tableName === 'tb_pangkat') navTo('pangkat');
                     else if(tableName === 'tb_jabatan') navTo('jabatan');
@@ -431,24 +667,17 @@
                 if (result.isConfirmed) {
                     toggleLoading(true);
                     await fetchGAS({ action: 'delete_data', table: tableName, id: id });
-                    
-                    // Refresh
                     const refresh = await fetchGAS({ action: 'get_data', nik: currentUser.nik });
                     appData = refresh.data;
                     toggleLoading(false);
-                    
                     Swal.fire('Terhapus', 'Data berhasil dihapus.', 'success');
-                    // Re-render crudely by refreshing current view based on active nav
                     const activeNav = document.querySelector('.nav-link.active');
                     if(activeNav) activeNav.click();
                 }
             });
         }
 
-        // Logic Add/Edit Pangkat/Jabatan/dll (Simplified SweetAlert Form)
-        // Note: Implementasi form lengkap bisa panjang, ini contoh generik
         async function addData(tableName) {
-            // Contoh form dinamis sederhana
             let htmlForm = '';
             if (tableName === 'tb_pangkat') {
                 htmlForm = `
@@ -468,17 +697,30 @@
                     <label>Tgl Lahir</label><input type="date" id="f-tgl" class="swal2-input">
                     <select id="f-tunj" class="swal2-select"><option value="Ya">Dapat Tunjangan</option><option value="Tidak">Tidak</option></select>
                 `;
-            } 
-            // ... Tambahkan else if untuk Jabatan & Kartu sesuai kebutuhan ...
+            } else if (tableName === 'tb_jabatan') {
+                htmlForm = `
+                    <input id="f-nama" class="swal2-input" placeholder="Nama Jabatan">
+                    <select id="f-jenis" class="swal2-select"><option>Struktural</option><option>Fungsional</option><option>Pelaksana</option></select>
+                    <input id="f-eselon" class="swal2-input" placeholder="Eselon (Opsional)">
+                    <input id="f-unit" class="swal2-input" placeholder="Unit Kerja">
+                    <input id="f-nosk" class="swal2-input" placeholder="Nomor SK">
+                    <label>TMT</label><input type="date" id="f-tmt" class="swal2-input">
+                    <div class="mt-3"><label>Upload SK</label><input type="file" id="f-file" class="form-control"></div>
+                `;
+            } else if (tableName === 'tb_kartu') {
+                htmlForm = `
+                    <select id="f-jenis" class="swal2-select"><option>BPJS</option><option>NPWP</option><option>Karpeg</option><option>Taspen</option></select>
+                    <input id="f-nomor" class="swal2-input" placeholder="Nomor Kartu">
+                    <div class="mt-3"><label>Upload Foto Kartu</label><input type="file" id="f-file" class="form-control"></div>
+                `;
+            }
 
             const { value: formValues } = await Swal.fire({
                 title: 'Tambah Data',
-                html: htmlForm || '<p>Form belum didefinisikan untuk demo ini.</p>',
+                html: htmlForm || '<p>Form belum didefinisikan.</p>',
                 showCancelButton: true,
                 preConfirm: async () => {
                     if (!htmlForm) return null;
-                    
-                    // Logic upload file generic
                     let fileUrl = '';
                     const fileInput = document.getElementById('f-file');
                     if (fileInput && fileInput.files[0]) {
@@ -487,12 +729,11 @@
                         if (upRes.status === 'success') fileUrl = upRes.url;
                     }
 
-                    // Mapping Values
-                    if (tableName === 'tb_pangkat') {
-                        return { Golongan: document.getElementById('f-gol').value, Pangkat: document.getElementById('f-pangkat').value, No_SK: document.getElementById('f-nosk').value, Tgl_SK: document.getElementById('f-tglsk').value, TMT: document.getElementById('f-tmt').value, Link_File: fileUrl };
-                    } else if (tableName === 'tb_keluarga') {
-                        return { Nama: document.getElementById('f-nama').value, NIK_Anggota: document.getElementById('f-nik').value, Hubungan: document.getElementById('f-hub').value, JK: document.getElementById('f-jk').value, Tgl_Lahir: document.getElementById('f-tgl').value, Tunjangan: document.getElementById('f-tunj').value };
-                    }
+                    if (tableName === 'tb_pangkat') return { Golongan: document.getElementById('f-gol').value, Pangkat: document.getElementById('f-pangkat').value, No_SK: document.getElementById('f-nosk').value, Tgl_SK: document.getElementById('f-tglsk').value, TMT: document.getElementById('f-tmt').value, Link_File: fileUrl };
+                    else if (tableName === 'tb_keluarga') return { Nama: document.getElementById('f-nama').value, NIK_Anggota: document.getElementById('f-nik').value, Hubungan: document.getElementById('f-hub').value, JK: document.getElementById('f-jk').value, Tgl_Lahir: document.getElementById('f-tgl').value, Tunjangan: document.getElementById('f-tunj').value };
+                    else if (tableName === 'tb_jabatan') return { Nama_Jabatan: document.getElementById('f-nama').value, Jenis_Jabatan: document.getElementById('f-jenis').value, Eselon: document.getElementById('f-eselon').value, Unit_Kerja: document.getElementById('f-unit').value, No_SK: document.getElementById('f-nosk').value, TMT: document.getElementById('f-tmt').value, Link_File: fileUrl };
+                    else if (tableName === 'tb_kartu') return { Jenis_Kartu: document.getElementById('f-jenis').value, No_Kartu: document.getElementById('f-nomor').value, Link_File: fileUrl };
+                    
                     return {};
                 }
             });
@@ -500,56 +741,10 @@
             if (formValues) saveData(tableName, formValues);
         }
 
-        // 3. ADMIN DASHBOARD
-        async function renderAdminDashboard(container) {
-            container.innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary"></div><p>Memuat Data Verifikasi...</p></div>`;
-            const res = await fetchGAS({ action: 'admin_get_pending' });
-            
-            if (res.status === 'success') {
-                const data = res.data;
-                let html = `<h3 class="fw-bold mb-4">Dashboard Verifikasi Admin</h3>`;
-                
-                // Helper render list
-                const renderList = (title, list, table) => {
-                    if (list.length === 0) return '';
-                    let items = list.map(item => `
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>${item.Nama || item.Nama_Jabatan || item.Pangkat || item.Jenis_Kartu}</strong> 
-                                <span class="badge bg-secondary">${item.NIK || item.NIK_Pegawai}</span>
-                                <br><small class="text-muted">Data: ${JSON.stringify(item).substring(0, 50)}...</small>
-                            </div>
-                            <button onclick="verifyItem('${table}', '${item.ID || item.NIK}')" class="btn btn-sm btn-success">Verifikasi</button>
-                        </li>
-                    `).join('');
-                    return `<div class="card mb-3"><div class="card-header bg-warning text-dark fw-bold">${title} (${list.length})</div><ul class="list-group list-group-flush">${items}</ul></div>`;
-                };
-
-                html += renderList('Profil Pending', data.tb_profil, 'tb_profil');
-                html += renderList('Riwayat Pangkat', data.tb_pangkat, 'tb_pangkat');
-                html += renderList('Riwayat Jabatan', data.tb_jabatan, 'tb_jabatan');
-                
-                if (html === `<h3 class="fw-bold mb-4">Dashboard Verifikasi Admin</h3>`) html += `<div class="alert alert-success">Semua data sudah diverifikasi!</div>`;
-                
-                container.innerHTML = html;
-            }
-        }
-
-        async function verifyItem(table, id) {
-            toggleLoading(true);
-            const res = await fetchGAS({ action: 'admin_verify', table, id });
-            toggleLoading(false);
-            if (res.status === 'success') {
-                Swal.fire('Sukses', 'Data terverifikasi', 'success');
-                navTo('admin'); // Refresh
-            }
-        }
-
         // ==========================================
         // UTILS
         // ==========================================
         async function fetchGAS(payload) {
-            // Gunakan metode POST text/plain untuk menghindari CORS preflight issues di GAS
             const response = await fetch(GAS_URL, {
                 method: 'POST',
                 body: JSON.stringify(payload)
@@ -570,7 +765,6 @@
             currentUser = JSON.parse(sessUser);
             initApp();
         }
-
     </script>
 </body>
 </html>
