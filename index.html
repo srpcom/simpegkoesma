@@ -100,7 +100,7 @@
                     <div class="mb-3"><label class="form-label">NIK (Sesuai KTP)</label><input type="number" id="r-nik" class="form-control" placeholder="16 Digit NIK" required minlength="16"></div>
                     <div class="mb-3"><label class="form-label">Nama Lengkap</label><input type="text" id="r-nama" class="form-control" placeholder="Nama Lengkap Tanpa Gelar" required></div>
                     <div class="mb-3"><label class="form-label">Email (Opsional / Gmail)</label><input type="email" id="r-email" class="form-control" placeholder="contoh@gmail.com"><div class="form-text text-muted" style="font-size: 0.8rem;">Gunakan Gmail jika ingin login dengan Google nanti.</div></div>
-                    <div class="mb-4"><label class="form-label">Buat Kata Sandi</label><input type="password" id="r-pass" class="form-control" placeholder="Min. 6 Karakter (Huruf & Angka)" required minlength="6"></div>
+                    <div class="mb-4"><label class="form-label">Buat Kata Sandi</label><input type="password" id="r-pass" class="form-control" placeholder="Min. 6 Karakter" required minlength="6"></div>
                     <button type="submit" class="btn-primary-modern" style="background: linear-gradient(to right, #198754, #157347);">Daftar Akun Baru</button>
                 </form>
                 <div class="auth-footer">Sudah punya akun? <a onclick="switchAuthMode('login')">Masuk disini</a></div>
@@ -243,11 +243,23 @@
             else if (page === 'admin') renderAdminDashboardV2(container);
         }
 
-        // --- RENDERERS ---
+        // --- RENDERERS (UPDATED PROFIL LOGIC) ---
         function renderProfil(container) {
             const p = appData.profil || {};
             const imgSrc = getImgUrl(p.Foto_Profil);
             const statusBadge = `<span class="status-badge-${p.Status_Verifikasi || 'DRAFT'}">${p.Status_Verifikasi || 'DRAFT'}</span>`;
+            
+            // Logika Bandingkan Email Login vs Email Profil
+            const loginEmail = currentUser.email_login ? currentUser.email_login.toLowerCase().trim() : '';
+            const profileEmail = p.Email ? p.Email.toLowerCase().trim() : '';
+            
+            let emailNote = '';
+            if (profileEmail && loginEmail && profileEmail === loginEmail) {
+                emailNote = `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size: 0.7em;"><i class="fas fa-check-circle"></i> Terhubung sebagai Login</span>`;
+            } else if (profileEmail) {
+                emailNote = `<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25" style="font-size: 0.7em;"><i class="fas fa-info-circle"></i> Hanya Data Kontak</span><br><small class="text-muted" style="font-size: 0.65em;">Login tetap menggunakan: <b>${loginEmail || 'NIK Anda'}</b></small>`;
+            }
+
             container.innerHTML = `
                 <div class="card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
@@ -265,7 +277,10 @@
                                 <div class="col-md-6"><label class="small text-muted">NIK</label><p class="fw-bold">${p.NIK || '-'}</p></div>
                                 <div class="col-md-6"><label class="small text-muted">Tgl Lahir</label><p class="fw-bold">${p.Tmp_Lahir||'-'}, ${p.Tgl_Lahir||'-'}</p></div>
                                 <div class="col-md-6"><label class="small text-muted">JK</label><p class="fw-bold">${p.JK||'-'}</p></div>
-                                <div class="col-md-6"><label class="small text-muted">Email</label><p class="fw-bold">${p.Email||'-'}</p></div>
+                                <div class="col-md-6"><label class="small text-muted">Email Kontak</label>
+                                    <p class="fw-bold mb-1">${p.Email||'-'}</p>
+                                    ${emailNote}
+                                </div>
                                 <div class="col-md-12"><label class="small text-muted">Alamat</label><p class="fw-bold">${p.Alamat||'-'}</p></div>
                                 <div class="col-md-6"><label class="small text-muted">Pendidikan</label><p class="fw-bold">${p.Pendidikan||'-'}</p></div>
                                 <div class="col-md-6"><label class="small text-muted">Jabatan</label><p class="fw-bold">${p.Jabatan_Terakhir||'-'}</p></div>
@@ -275,6 +290,7 @@
                 </div>`;
         }
 
+        // [UPDATED] EDIT PROFIL WITH EMAIL INPUT
         async function editProfil() {
             const p = appData.profil || {};
             try {
@@ -285,6 +301,10 @@
                         <input id="sw-nama" class="swal2-input" placeholder="Nama Lengkap" value="${p.Nama||''}">
                         <div class="d-flex gap-2 mx-5 mt-3"><input id="sw-tmp" class="form-control" placeholder="Tmp Lahir" value="${p.Tmp_Lahir||''}"><input id="sw-tgl" class="form-control" type="date" value="${p.Tgl_Lahir||''}"></div>
                         <select id="sw-jk" class="swal2-select" style="width:80%; margin: 10px auto; display:block;"><option value="L" ${p.JK=='L'?'selected':''}>Laki-laki</option><option value="P" ${p.JK=='P'?'selected':''}>Perempuan</option></select>
+                        
+                        <input id="sw-email" class="swal2-input" placeholder="Email Kontak" value="${p.Email||''}">
+                        <div class="text-muted small mx-5 mb-2" style="font-size:0.7em">*Mengubah email di sini tidak mengubah email login Anda.</div>
+
                         <input id="sw-hp" class="swal2-input" placeholder="Nomor HP" value="${p.No_HP||''}">
                         <input id="sw-alamat" class="swal2-input" placeholder="Alamat Domisili" value="${p.Alamat||''}">
                         <input id="sw-pend" class="swal2-input" placeholder="Pendidikan Terakhir" value="${p.Pendidikan||''}">
@@ -300,8 +320,17 @@
                             if(upRes.status === 'success') fotoUrl = upRes.url;
                         }
                         return {
-                            NIP: document.getElementById('sw-nip').value, Nama: document.getElementById('sw-nama').value, Tmp_Lahir: document.getElementById('sw-tmp').value, Tgl_Lahir: document.getElementById('sw-tgl').value,
-                            JK: document.getElementById('sw-jk').value, No_HP: document.getElementById('sw-hp').value, Alamat: document.getElementById('sw-alamat').value, Pendidikan: document.getElementById('sw-pend').value, Jabatan_Terakhir: document.getElementById('sw-jab').value, Foto_Profil: fotoUrl
+                            NIP: document.getElementById('sw-nip').value, 
+                            Nama: document.getElementById('sw-nama').value, 
+                            Tmp_Lahir: document.getElementById('sw-tmp').value, 
+                            Tgl_Lahir: document.getElementById('sw-tgl').value,
+                            JK: document.getElementById('sw-jk').value, 
+                            Email: document.getElementById('sw-email').value, // Capture Email
+                            No_HP: document.getElementById('sw-hp').value, 
+                            Alamat: document.getElementById('sw-alamat').value, 
+                            Pendidikan: document.getElementById('sw-pend').value, 
+                            Jabatan_Terakhir: document.getElementById('sw-jab').value, 
+                            Foto_Profil: fotoUrl
                         };
                     }
                 });
