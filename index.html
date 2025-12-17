@@ -17,14 +17,14 @@
         /* Layout Sidebar */
         .sidebar { 
             min-height: 100vh; width: 260px; background: var(--primary); color: white; 
-            position: fixed; transition: all 0.3s; z-index: 1050; /* Z-index tinggi agar di atas overlay */
+            position: fixed; transition: all 0.3s; z-index: 1050; 
         }
         .sidebar .nav-link { color: rgba(255,255,255,0.8); margin: 5px 15px; border-radius: 8px; font-weight: 500; }
         .sidebar .nav-link:hover, .sidebar .nav-link.active { background: rgba(255,255,255,0.15); color: white; transform: translateX(5px); }
         .sidebar .nav-link i { width: 25px; }
         .main-content { margin-left: 260px; padding: 25px; transition: all 0.3s; }
         
-        /* Mobile Overlay (Layar Gelap saat Menu Buka) */
+        /* Mobile Overlay */
         .sidebar-overlay {
             display: none;
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -39,37 +39,36 @@
             .main-content { margin-left: 0; }
         }
 
-        /* --- SWEETALERT2 PROFESSIONAL CUSTOMIZATION --- */
+        /* --- SWEETALERT2 CUSTOMIZATION --- */
         .swal2-popup {
-            font-size: 0.9rem !important; /* Perkecil font body */
+            font-size: 0.9rem !important; 
             border-radius: 12px !important;
             padding: 1.5em !important;
         }
         .swal2-title {
-            font-size: 1.4rem !important; /* Perkecil judul */
+            font-size: 1.4rem !important; 
             font-weight: 700 !important;
             color: #333 !important;
         }
         .swal2-html-container {
             font-size: 0.95rem !important;
             color: #555 !important;
+            text-align: left !important; /* Agar form rata kiri */
         }
-        .swal2-actions {
-            margin-top: 1em !important;
+        /* Style khusus form dalam Swal */
+        .swal-form-group {
+            text-align: left;
+            margin-bottom: 1rem;
         }
-        .swal2-styled {
-            padding: 0.5em 1.2em !important; /* Tombol lebih ramping */
-            font-size: 0.9rem !important;
-            border-radius: 6px !important;
-        }
-        /* Fix input di Swal agar tidak terlalu besar */
-        .swal2-input, .swal2-select {
-            font-size: 0.9rem !important;
-            height: 2.4em !important;
-            margin: 0.5em auto !important;
+        .swal-form-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 0.4rem;
+            display: block;
+            color: #444;
         }
 
-        /* Components & Login (Tetap Sama) */
+        /* Components & Login */
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s; }
         .status-badge-DRAFT { background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; border: 1px solid #ffeeba; }
         .status-badge-VERIFIED { background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; border: 1px solid #c3e6cb; }
@@ -203,7 +202,6 @@
             overlay.classList.toggle('active');
         }
 
-        // [HELPER] FIX IMAGE URL
         function getImgUrl(url) {
             if (!url || url.length < 5) return 'https://via.placeholder.com/150';
             if (url.includes('drive.google.com/file/d/')) {
@@ -311,12 +309,10 @@
         }
 
         function navTo(page) {
-            // [MODIFIED] Auto close sidebar on mobile when navigating
             if (window.innerWidth <= 768) {
                 document.getElementById('sidebar').classList.remove('active');
                 document.getElementById('sidebar-overlay').classList.remove('active');
             }
-
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
             const menu = document.querySelector(`[onclick="navTo('${page}')"]`);
             if(menu) menu.classList.add('active');
@@ -575,25 +571,128 @@
 
         async function addData(tableName) {
             let htmlForm = '';
-            if (tableName === 'tb_pangkat') htmlForm = `<input id="f-gol" class="swal2-input" placeholder="Golongan"><input id="f-pangkat" class="swal2-input" placeholder="Nama Pangkat"><input id="f-nosk" class="swal2-input" placeholder="No SK"><label>Tgl SK</label><input type="date" id="f-tglsk" class="swal2-input"><label>TMT</label><input type="date" id="f-tmt" class="swal2-input"><div class="mt-3"><input type="file" id="f-file" class="form-control"></div>`;
-            else if (tableName === 'tb_keluarga') htmlForm = `<input id="f-nama" class="swal2-input" placeholder="Nama"><input id="f-nik" class="swal2-input" placeholder="NIK Anggota"><select id="f-hub" class="swal2-select"><option>Suami</option><option>Istri</option><option>Anak</option></select><select id="f-jk" class="swal2-select"><option value="L">L</option><option value="P">P</option></select><label>Tgl Lahir</label><input type="date" id="f-tgl" class="swal2-input"><select id="f-tunj" class="swal2-select"><option value="Ya">Dapat Tunjangan</option><option value="Tidak">Tidak</option></select>`;
-            else if (tableName === 'tb_jabatan') htmlForm = `<input id="f-nama" class="swal2-input" placeholder="Nama Jabatan"><select id="f-jenis" class="swal2-select"><option>Struktural</option><option>Fungsional</option></select><input id="f-eselon" class="swal2-input" placeholder="Eselon"><input id="f-unit" class="swal2-input" placeholder="Unit Kerja"><input id="f-nosk" class="swal2-input" placeholder="No SK"><label>TMT</label><input type="date" id="f-tmt" class="swal2-input"><div class="mt-3"><input type="file" id="f-file" class="form-control"></div>`;
-            else if (tableName === 'tb_kartu') htmlForm = `<select id="f-jenis" class="swal2-select"><option>BPJS</option><option>NPWP</option><option>Karpeg</option></select><input id="f-nomor" class="swal2-input" placeholder="Nomor Kartu"><div class="mt-3"><input type="file" id="f-file" class="form-control"></div>`;
+            // [MODIFIED] Using Bootstrap Classes for Vertical Stacking
+            if (tableName === 'tb_pangkat') {
+                htmlForm = `
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Golongan</label>
+                        <input id="f-gol" class="form-control" placeholder="Contoh: III/a">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Pangkat</label>
+                        <input id="f-pangkat" class="form-control" placeholder="Nama Pangkat">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Nomor SK</label>
+                        <input id="f-nosk" class="form-control" placeholder="Nomor SK">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Tanggal SK</label>
+                        <input type="date" id="f-tglsk" class="form-control">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">TMT</label>
+                        <input type="date" id="f-tmt" class="form-control">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Upload SK (PDF/Img)</label>
+                        <input type="file" id="f-file" class="form-control">
+                    </div>`;
+            } else if (tableName === 'tb_keluarga') {
+                htmlForm = `
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Nama Anggota Keluarga</label>
+                        <input id="f-nama" class="form-control" placeholder="Nama Lengkap">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">NIK Anggota</label>
+                        <input id="f-nik" class="form-control" placeholder="NIK">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Hubungan</label>
+                        <select id="f-hub" class="form-select"><option>Suami</option><option>Istri</option><option>Anak</option></select>
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Jenis Kelamin</label>
+                        <select id="f-jk" class="form-select"><option value="L">L</option><option value="P">P</option></select>
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Tanggal Lahir</label>
+                        <input type="date" id="f-tgl" class="form-control">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Tunjangan</label>
+                        <select id="f-tunj" class="form-select"><option value="Ya">Dapat Tunjangan</option><option value="Tidak">Tidak</option></select>
+                    </div>`;
+            } else if (tableName === 'tb_jabatan') {
+                htmlForm = `
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Nama Jabatan</label>
+                        <input id="f-nama" class="form-control" placeholder="Nama Jabatan">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Jenis Jabatan</label>
+                        <select id="f-jenis" class="form-select"><option>Struktural</option><option>Fungsional</option><option>Pelaksana</option></select>
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Eselon (Opsional)</label>
+                        <input id="f-eselon" class="form-control" placeholder="Eselon">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Unit Kerja</label>
+                        <input id="f-unit" class="form-control" placeholder="Unit Kerja">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Nomor SK</label>
+                        <input id="f-nosk" class="form-control" placeholder="No SK">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">TMT</label>
+                        <input type="date" id="f-tmt" class="form-control">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Upload SK</label>
+                        <input type="file" id="f-file" class="form-control">
+                    </div>`;
+            } else if (tableName === 'tb_kartu') {
+                htmlForm = `
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Jenis Kartu</label>
+                        <select id="f-jenis" class="form-select"><option>BPJS</option><option>NPWP</option><option>Karpeg</option><option>Taspen</option></select>
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Nomor Kartu</label>
+                        <input id="f-nomor" class="form-control" placeholder="Nomor Kartu">
+                    </div>
+                    <div class="swal-form-group">
+                        <label class="swal-form-label">Upload Foto Kartu</label>
+                        <input type="file" id="f-file" class="form-control">
+                    </div>`;
+            }
 
-            const { value: formValues } = await Swal.fire({ title: 'Tambah Data', html: htmlForm, showCancelButton: true, preConfirm: async () => {
-                if (!htmlForm) return null;
-                let fileUrl = ''; const fileInput = document.getElementById('f-file');
-                if (fileInput && fileInput.files[0]) {
-                    const base64 = await toBase64(fileInput.files[0]);
-                    const upRes = await fetchGAS({ action: 'upload_file', base64: base64.split(',')[1], mimeType: fileInput.files[0].type, nik: currentUser.nik, type: 'DOC' });
-                    if (upRes.status === 'success') fileUrl = upRes.url;
+            const { value: formValues } = await Swal.fire({
+                title: 'Tambah Data',
+                html: htmlForm,
+                showCancelButton: true,
+                confirmButtonText: 'Simpan',
+                customClass: {
+                    popup: 'swal-wide-mobile' // Optional custom class if needed
+                },
+                preConfirm: async () => {
+                    if (!htmlForm) return null;
+                    let fileUrl = ''; const fileInput = document.getElementById('f-file');
+                    if (fileInput && fileInput.files[0]) {
+                        const base64 = await toBase64(fileInput.files[0]);
+                        const upRes = await fetchGAS({ action: 'upload_file', base64: base64.split(',')[1], mimeType: fileInput.files[0].type, nik: currentUser.nik, type: 'DOC' });
+                        if (upRes.status === 'success') fileUrl = upRes.url;
+                    }
+                    if (tableName === 'tb_pangkat') return { Golongan: document.getElementById('f-gol').value, Pangkat: document.getElementById('f-pangkat').value, No_SK: document.getElementById('f-nosk').value, Tgl_SK: document.getElementById('f-tglsk').value, TMT: document.getElementById('f-tmt').value, Link_File: fileUrl };
+                    else if (tableName === 'tb_keluarga') return { Nama: document.getElementById('f-nama').value, NIK_Anggota: document.getElementById('f-nik').value, Hubungan: document.getElementById('f-hub').value, JK: document.getElementById('f-jk').value, Tgl_Lahir: document.getElementById('f-tgl').value, Tunjangan: document.getElementById('f-tunj').value };
+                    else if (tableName === 'tb_jabatan') return { Nama_Jabatan: document.getElementById('f-nama').value, Jenis_Jabatan: document.getElementById('f-jenis').value, Eselon: document.getElementById('f-eselon').value, Unit_Kerja: document.getElementById('f-unit').value, No_SK: document.getElementById('f-nosk').value, TMT: document.getElementById('f-tmt').value, Link_File: fileUrl };
+                    else if (tableName === 'tb_kartu') return { Jenis_Kartu: document.getElementById('f-jenis').value, No_Kartu: document.getElementById('f-nomor').value, Link_File: fileUrl };
+                    return {};
                 }
-                if (tableName === 'tb_pangkat') return { Golongan: document.getElementById('f-gol').value, Pangkat: document.getElementById('f-pangkat').value, No_SK: document.getElementById('f-nosk').value, Tgl_SK: document.getElementById('f-tglsk').value, TMT: document.getElementById('f-tmt').value, Link_File: fileUrl };
-                else if (tableName === 'tb_keluarga') return { Nama: document.getElementById('f-nama').value, NIK_Anggota: document.getElementById('f-nik').value, Hubungan: document.getElementById('f-hub').value, JK: document.getElementById('f-jk').value, Tgl_Lahir: document.getElementById('f-tgl').value, Tunjangan: document.getElementById('f-tunj').value };
-                else if (tableName === 'tb_jabatan') return { Nama_Jabatan: document.getElementById('f-nama').value, Jenis_Jabatan: document.getElementById('f-jenis').value, Eselon: document.getElementById('f-eselon').value, Unit_Kerja: document.getElementById('f-unit').value, No_SK: document.getElementById('f-nosk').value, TMT: document.getElementById('f-tmt').value, Link_File: fileUrl };
-                else if (tableName === 'tb_kartu') return { Jenis_Kartu: document.getElementById('f-jenis').value, No_Kartu: document.getElementById('f-nomor').value, Link_File: fileUrl };
-                return {};
-            }});
+            });
             if (formValues) saveData(tableName, formValues);
         }
 
