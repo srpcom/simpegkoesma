@@ -194,6 +194,10 @@
 
         .animate-fade { animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Camera & Map */
+        #camera-preview { width: 100%; border-radius: 10px; background: #000; transform: scaleX(-1); }
+        .absensi-info { font-size: 0.9rem; margin-bottom: 10px; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
@@ -285,6 +289,7 @@
             
             <ul class="nav flex-column mb-auto">
                 <li class="nav-item"><a class="nav-link active" onclick="navTo('profil')" style="cursor: pointer;"><i class="fas fa-user-circle me-2"></i> Profil Pegawai</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="navTo('absensi')" style="cursor: pointer;"><i class="fas fa-camera me-2"></i> Absensi</a></li>
                 <li class="nav-item"><a class="nav-link" onclick="navTo('pangkat')" style="cursor: pointer;"><i class="fas fa-medal me-2"></i> Riwayat Pangkat</a></li>
                 <li class="nav-item"><a class="nav-link" onclick="navTo('jabatan')" style="cursor: pointer;"><i class="fas fa-briefcase me-2"></i> Riwayat Jabatan</a></li>
                 <li class="nav-item"><a class="nav-link" onclick="navTo('keluarga')" style="cursor: pointer;"><i class="fas fa-users me-2"></i> Anggota Keluarga</a></li>
@@ -312,6 +317,8 @@
         let appData = {}; 
         let adminData = {}; 
         let selectedIds = []; 
+        let userLocation = null;
+        let stream = null;
         
         // --- PAGINATION STATE ---
         let currentAdminPage = 1;
@@ -372,12 +379,9 @@
             
             if(r.status==='success'){
                 appData=r.data; 
-                
-                // Update Navbar Name with Profile Data if available
                 if (appData.profil && appData.profil.Nama) {
                      document.getElementById('user-display-name').innerText = appData.profil.Nama;
                 }
-                
                 processCurrentHash();
             } 
         }
@@ -387,7 +391,6 @@
             let hash = window.location.hash.substring(1); 
             if(!hash) hash = 'profil';
             
-            // Mapping URL Friendly Hash
             if (hash === 'riwayatjabatan') hash = 'jabatan';
             else if (hash === 'riwayatpangkat') hash = 'pangkat';
             else if (hash === 'anggotakeluarga') hash = 'keluarga';
@@ -396,7 +399,7 @@
             // Admin Pages Logic
             const adminTabs = ['antrean', 'masterpegawai', 'manajemenuser', 'arsipdata'];
             
-            if (hash === 'admin') hash = 'antrean'; // Default Admin Page
+            if (hash === 'admin') hash = 'antrean'; 
             
             if (adminTabs.includes(hash)) {
                 if (currentUser.role !== 'ADMIN') {
@@ -404,7 +407,7 @@
                     hash = 'profil';
                 } else {
                     renderPage('admin', hash);
-                    return; // Stop here, handled by special admin renderer
+                    return; 
                 }
             }
             
@@ -414,45 +417,45 @@
         window.addEventListener('hashchange', processCurrentHash);
 
         function navTo(page) {
-            // UI Sidebar Handling: Auto close on mobile
             if (window.innerWidth <= 768) { 
                 document.getElementById('sidebar').classList.remove('active'); 
                 document.getElementById('sidebar-overlay').classList.remove('active'); 
             }
             
-            // Generate URL Hash
             let urlHash = page;
             if (page === 'jabatan') urlHash = 'riwayatjabatan';
             else if (page === 'pangkat') urlHash = 'riwayatpangkat';
             else if (page === 'keluarga') urlHash = 'anggotakeluarga';
             else if (page === 'kartu') urlHash = 'datakartu';
-            
-            // Admin Navigation
             if (page === 'admin') urlHash = 'antrean'; 
 
-            // Set Hash (Triggers hashchange -> processCurrentHash -> renderPage)
             window.location.hash = urlHash;
         }
 
         function renderPage(page, subPage = null) {
+            // Cleanup Camera Stream if switching away from absensi
+            if (stream && page !== 'absensi') {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+
             document.querySelectorAll('.nav-link').forEach(e=>e.classList.remove('active'));
             let menuKey = page; 
             
-            // Handle admin menu active state
             if (page === 'admin' || ['antrean', 'masterpegawai', 'manajemenuser', 'arsipdata'].includes(subPage)) {
-                menuKey = 'antrean'; // Highlights Admin Dashboard Menu
+                menuKey = 'antrean'; 
             } else if(page==='pangkat') menuKey='pangkat'; 
             else if(page==='jabatan') menuKey='jabatan';
+            else if(page==='absensi') menuKey='absensi'; // New active state
             
             const menu = document.querySelector(`[onclick="navTo('${menuKey}')"]`);
             if(menu) menu.classList.add('active');
             
             const container = document.getElementById('view-container');
             
-            if (page === 'admin') {
-                renderAdminDashboardV2(container, subPage);
-            }
+            if (page === 'admin') renderAdminDashboardV2(container, subPage);
             else if(page==='profil') renderProfil(container);
+            else if(page==='absensi') renderAbsensi(container);
             else if(page==='pangkat') renderTable(container,'Riwayat Pangkat','tb_pangkat');
             else if(page==='jabatan') renderTable(container,'Riwayat Jabatan','tb_jabatan');
             else if(page==='keluarga') renderTable(container,'Anggota Keluarga','tb_keluarga');
@@ -490,7 +493,7 @@
             const p = appData.profil || {}; 
             const standardStatus = ['PNS', 'PPPK', 'Tenaga Kegiatan'];
             let isStandard = standardStatus.includes(p.Status_Peg);
-            let selectVal = isStandard ? p.Status_Peg : (p.Status_Peg ? 'Lainnya' : 'PNS'); // Default to PNS if empty, or Lainnya if custom
+            let selectVal = isStandard ? p.Status_Peg : (p.Status_Peg ? 'Lainnya' : 'PNS'); 
             let otherVal = isStandard ? '' : p.Status_Peg;
             let otherDisplay = selectVal === 'Lainnya' ? 'block' : 'none';
 
@@ -614,6 +617,182 @@
         async function saveData(t,v,id=null,tk=null) { toggleLoading(true); const n=tk||currentUser.nik; const ia=currentUser.role==='ADMIN'; const p={action:'save_data',table:t,values:v,nik:n,isAdmin:ia}; if(id)p.values.ID=id; const r=await fetchGAS(p); if(r.status==='success'){ if(!tk||tk===currentUser.nik){const ref=await fetchGAS({action:'get_data',nik:currentUser.nik});if(ref.status==='success')appData=ref.data;} toggleLoading(false); Swal.fire('Sukses','Tersimpan','success').then(()=>{ if(tk&&ia)loadAdminMaster(); else if(t==='tb_profil')navTo('profil'); else navTo(t.split('_')[1]); }); }else{toggleLoading(false);Swal.fire('Error',r.message,'error')} }
         function deleteData(t,id) { Swal.fire({title:'Hapus?',icon:'warning',showCancelButton:true,confirmButtonText:'Ya'}).then(async(r)=>{if(r.isConfirmed){toggleLoading(true); await fetchGAS({action:'delete_data',table:t,id:id}); const ref=await fetchGAS({action:'get_data',nik:currentUser.nik}); appData=ref.data; toggleLoading(false); Swal.fire('Dihapus','','success'); document.querySelector('.nav-link.active').click(); }}); }
         async function fetchGAS(p) { const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(p)}); return await r.json(); }
+
+        // --- ABSENSI LOGIC ---
+        async function renderAbsensi(c) {
+            c.innerHTML = `
+            <div class="card p-4">
+                <h4 class="text-primary fw-bold mb-4">Absensi Pegawai</h4>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card bg-light border-0 p-3 h-100">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-camera"></i> Foto Selfie</h6>
+                            <video id="camera-preview" autoplay playsinline class="mb-2 shadow-sm"></video>
+                            <canvas id="camera-canvas" style="display:none;"></canvas>
+                            <button id="btn-camera" class="btn btn-secondary w-100" onclick="startCamera()"><i class="fas fa-power-off"></i> Nyalakan Kamera</button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <div class="card bg-light border-0 p-3 h-100">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-map-marker-alt"></i> Lokasi & Waktu</h6>
+                            <div class="absensi-info">
+                                <div><small class="text-muted">Waktu Sekarang:</small></div>
+                                <div class="fw-bold fs-5" id="live-clock">--:--:--</div>
+                            </div>
+                            <div class="absensi-info">
+                                <div><small class="text-muted">Koordinat:</small></div>
+                                <div class="fw-bold" id="live-location">Mencari lokasi...</div>
+                            </div>
+                            <div class="mt-auto pt-3 d-grid gap-2">
+                                <button id="btn-in" onclick="submitAbsensi('IN')" class="btn btn-success btn-lg" disabled><i class="fas fa-sign-in-alt"></i> Absen Masuk</button>
+                                <button id="btn-out" onclick="submitAbsensi('OUT')" class="btn btn-danger btn-lg" disabled><i class="fas fa-sign-out-alt"></i> Absen Pulang</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+                <h6 class="fw-bold mb-3">Riwayat 5 Hari Terakhir</h6>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light"><tr><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr></thead>
+                        <tbody id="tb-absensi-hist"><tr><td colspan="4" class="text-center">Memuat...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>`;
+
+            // Start Clock
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('live-clock').innerText = now.toLocaleTimeString('id-ID');
+            }, 1000);
+
+            // Get Location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        document.getElementById('live-location').innerText = `${userLocation.lat.toFixed(5)}, ${userLocation.lng.toFixed(5)}`;
+                        checkDistance(userLocation);
+                    },
+                    (err) => {
+                        document.getElementById('live-location').innerHTML = `<span class="text-danger">Gagal: ${err.message}</span>`;
+                        Swal.fire('Error GPS', 'Aktifkan GPS untuk absen', 'error');
+                    }
+                );
+            } else {
+                document.getElementById('live-location').innerText = "GPS tidak didukung browser ini.";
+            }
+
+            // Load History & Status
+            const r = await fetchGAS({action: 'get_today_absensi', nik: currentUser.nik});
+            if (r.status === 'success') {
+                const d = r.data;
+                const tb = document.getElementById('tb-absensi-hist');
+                
+                // Update Button State
+                const btnIn = document.getElementById('btn-in');
+                const btnOut = document.getElementById('btn-out');
+                
+                // Reset buttons first (disabled by default in HTML)
+                // Logic: 
+                // Belum absen masuk -> Masuk Enable, Pulang Disable
+                // Sudah masuk, belum pulang -> Masuk Disable, Pulang Enable
+                // Sudah masuk, sudah pulang -> Masuk Disable, Pulang Disable
+                
+                if (!d.hasIn) {
+                    btnIn.disabled = false;
+                    btnOut.disabled = true;
+                } else if (d.hasIn && !d.hasOut) {
+                    btnIn.disabled = true;
+                    btnIn.innerHTML = `<i class="fas fa-check"></i> Sudah Masuk (${d.timeIn})`;
+                    btnIn.classList.remove('btn-success'); btnIn.classList.add('btn-secondary');
+                    btnOut.disabled = false;
+                } else {
+                    btnIn.disabled = true;
+                    btnIn.innerHTML = `<i class="fas fa-check"></i> Masuk (${d.timeIn})`;
+                    btnIn.classList.remove('btn-success'); btnIn.classList.add('btn-secondary');
+                    
+                    btnOut.disabled = true;
+                    btnOut.innerHTML = `<i class="fas fa-check"></i> Pulang (${d.timeOut})`;
+                    btnOut.classList.remove('btn-danger'); btnOut.classList.add('btn-secondary');
+                }
+
+                // Render Table
+                if (d.history.length > 0) {
+                    tb.innerHTML = d.history.map(h => `<tr><td>${h.tanggal}</td><td>${h.masuk}</td><td>${h.pulang}</td><td><span class="badge bg-primary">${h.status}</span></td></tr>`).join('');
+                } else {
+                    tb.innerHTML = '<tr><td colspan="4" class="text-center">Belum ada data.</td></tr>';
+                }
+            }
+        }
+
+        async function startCamera() {
+            const video = document.getElementById('camera-preview');
+            const btn = document.getElementById('btn-camera');
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                btn.style.display = 'none';
+            } catch (err) {
+                Swal.fire('Kamera Error', 'Izinkan akses kamera di browser', 'error');
+            }
+        }
+
+        function checkDistance(loc) {
+            // Koordinat RSUD dr. R. Koesma (Example: -6.894, 112.046) - Sesuaikan dengan Real
+            // Disini saya pakai radius lebar dulu agar bisa ditest dimana saja
+            // const rsudLoc = { lat: -6.8943, lng: 112.0467 }; 
+            // const dist = getDistanceFromLatLonInKm(loc.lat, loc.lng, rsudLoc.lat, rsudLoc.lng);
+            // if (dist > 0.5) { // 500 meter
+            //    Swal.fire('Diluar Jangkauan', 'Anda berada diluar radius RSUD', 'warning');
+            //    document.getElementById('btn-in').disabled = true;
+            //    document.getElementById('btn-out').disabled = true;
+            // }
+            console.log("Lokasi terdeteksi:", loc);
+        }
+
+        // Helper Distance
+        function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
+            var R = 6371; var dLat = deg2rad(lat2-lat1); var dLon = deg2rad(lon2-lon1); 
+            var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R * c;
+        }
+        function deg2rad(deg) { return deg * (Math.PI/180) }
+
+        async function submitAbsensi(type) {
+            if (!userLocation) return Swal.fire('Error', 'Lokasi belum ditemukan', 'error');
+            if (!stream) return Swal.fire('Error', 'Nyalakan kamera dulu', 'error');
+
+            const video = document.getElementById('camera-preview');
+            const canvas = document.getElementById('camera-canvas');
+            const context = canvas.getContext('2d');
+            
+            // Capture Foto
+            canvas.width = 320; // Resize agar ringan
+            canvas.height = 240;
+            context.drawImage(video, 0, 0, 320, 240);
+            const imageBase64 = canvas.toDataURL('image/jpeg', 0.7); // Kompresi 0.7
+
+            toggleLoading(true);
+            const r = await fetchGAS({
+                action: 'submit_absensi',
+                nik: currentUser.nik,
+                type: type,
+                location: `${userLocation.lat},${userLocation.lng}`,
+                image: imageBase64.split(',')[1]
+            });
+            toggleLoading(false);
+
+            if (r.status === 'success') {
+                Swal.fire('Berhasil', r.message, 'success');
+                renderAbsensi(document.getElementById('view-container')); // Refresh
+            } else {
+                Swal.fire('Gagal', r.message, 'error');
+            }
+        }
 
         // --- ADMIN ---
         function renderAdminDashboardV2(c, activeTab) { 
