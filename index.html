@@ -320,6 +320,10 @@
         let userLocation = null;
         let stream = null;
         
+        // --- ABSENSI STATE ---
+        let officeConfig = null;
+        let todayAbsensiData = null;
+        
         // --- PAGINATION STATE ---
         let currentAdminPage = 1;
         let adminSearchTimer = null;
@@ -619,37 +623,80 @@
         async function fetchGAS(p) { const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(p)}); return await r.json(); }
 
         // --- ABSENSI LOGIC ---
+        // 1. Fetch Data Parallel
         async function renderAbsensi(c) {
+            toggleLoading(true);
+            const [rAbsen, rSet] = await Promise.all([
+                fetchGAS({action: 'get_today_absensi', nik: currentUser.nik}),
+                fetchGAS({action: 'get_settings'})
+            ]);
+            toggleLoading(false);
+
+            if (rAbsen.status !== 'success' || rSet.status !== 'success') {
+                return c.innerHTML = '<div class="alert alert-danger">Gagal memuat data. Periksa koneksi.</div>';
+            }
+
+            todayAbsensiData = rAbsen.data;
+            officeConfig = rSet.data;
+
+            // 2. Render HTML
             c.innerHTML = `
             <div class="card p-4">
                 <h4 class="text-primary fw-bold mb-4">Absensi Pegawai</h4>
                 
                 <div class="row">
                     <div class="col-md-6 mb-4">
-                        <div class="card bg-light border-0 p-3 h-100">
-                            <h6 class="fw-bold mb-3"><i class="fas fa-camera"></i> Foto Selfie</h6>
-                            <video id="camera-preview" autoplay playsinline class="mb-2 shadow-sm"></video>
-                            <canvas id="camera-canvas" style="display:none;"></canvas>
-                            <button id="btn-camera" class="btn btn-secondary w-100" onclick="startCamera()"><i class="fas fa-power-off"></i> Nyalakan Kamera</button>
+                        <div class="card bg-light border-0 p-3 shadow-sm h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0"><i class="fas fa-camera"></i> Foto Selfie</h6>
+                                <span id="radius-indicator" class="badge bg-secondary">Mencari Lokasi...</span>
+                            </div>
+                            
+                            <div class="position-relative mb-3 flex-grow-1" style="min-height: 250px;">
+                                <video id="camera-preview" autoplay playsinline class="w-100 h-100 rounded shadow-sm" style="object-fit: cover; transform: scaleX(-1); background:#000;"></video>
+                                <canvas id="camera-canvas" style="display:none;"></canvas>
+                                
+                                <div class="position-absolute top-50 start-50 translate-middle text-white" id="cam-placeholder" style="display:none;">
+                                    <i class="fas fa-camera-slash fa-2x"></i>
+                                </div>
+                            </div>
+
+                            <button id="btn-camera" class="btn btn-primary w-100 mb-3" onclick="startCamera()"><i class="fas fa-power-off"></i> Nyalakan Kamera</button>
+
+                            <!-- BUTTONS MOVED HERE -->
+                            <div class="d-grid gap-2">
+                                <button id="btn-in" onclick="submitAbsensi('IN')" class="btn btn-success btn-lg" disabled>
+                                    <i class="fas fa-sign-in-alt"></i> Absen Masuk
+                                </button>
+                                <button id="btn-out" onclick="submitAbsensi('OUT')" class="btn btn-danger btn-lg" disabled>
+                                    <i class="fas fa-sign-out-alt"></i> Absen Pulang
+                                </button>
+                            </div>
+                            <div id="dist-info" class="text-center mt-2 small text-muted"></div>
                         </div>
                     </div>
                     
                     <div class="col-md-6 mb-4">
-                        <div class="card bg-light border-0 p-3 h-100">
-                            <h6 class="fw-bold mb-3"><i class="fas fa-map-marker-alt"></i> Lokasi & Waktu</h6>
-                            <div class="absensi-info">
-                                <div><small class="text-muted">Waktu Sekarang:</small></div>
-                                <div class="fw-bold fs-5" id="live-clock">--:--:--</div>
+                        <div class="card border-0 h-100 p-3">
+                            <h6 class="fw-bold mb-3 border-bottom pb-2">Informasi Lokasi & Waktu</h6>
+                            
+                            <div class="mb-4">
+                                <label class="small text-muted d-block">Waktu Server</label>
+                                <div class="fw-bold fs-4 text-dark" id="live-clock">--:--:--</div>
                             </div>
-                            <div class="absensi-info">
-                                <div><small class="text-muted">Koordinat:</small></div>
-                                <div class="fw-bold" id="live-location">Mencari lokasi...</div>
-                                <button onclick="refreshLocation()" class="btn btn-sm btn-outline-primary mt-2 w-100"><i class="fas fa-sync-alt"></i> Refresh Lokasi</button>
+
+                            <div class="mb-4">
+                                <label class="small text-muted d-block">Koordinat Anda</label>
+                                <div class="fw-bold text-primary font-monospace" id="live-location">Mencari...</div>
                             </div>
-                            <div class="mt-auto pt-3 d-grid gap-2">
-                                <button id="btn-in" onclick="submitAbsensi('IN')" class="btn btn-success btn-lg" disabled><i class="fas fa-sign-in-alt"></i> Absen Masuk</button>
-                                <button id="btn-out" onclick="submitAbsensi('OUT')" class="btn btn-danger btn-lg" disabled><i class="fas fa-sign-out-alt"></i> Absen Pulang</button>
+
+                            <div class="alert alert-info small mb-3">
+                                <i class="fas fa-info-circle"></i> Pastikan Anda berada dalam radius <b>${officeConfig.radius} meter</b> dari titik kantor untuk melakukan absensi.
                             </div>
+
+                            <button onclick="refreshLocation()" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-sync-alt"></i> Refresh Lokasi Akurat
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -657,68 +704,103 @@
                 <hr class="my-4">
                 <h6 class="fw-bold mb-3">Riwayat 5 Hari Terakhir</h6>
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle small">
                         <thead class="table-light"><tr><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr></thead>
-                        <tbody id="tb-absensi-hist"><tr><td colspan="4" class="text-center">Memuat...</td></tr></tbody>
+                        <tbody id="tb-absensi-hist">
+                            ${todayAbsensiData.history.length > 0 
+                                ? todayAbsensiData.history.map(h => `<tr><td>${h.tanggal}</td><td>${h.masuk}</td><td>${h.pulang}</td><td><span class="badge bg-primary">${h.status}</span></td></tr>`).join('') 
+                                : '<tr><td colspan="4" class="text-center">Belum ada data.</td></tr>'}
+                        </tbody>
                     </table>
                 </div>
             </div>`;
 
+            // 3. Init Logic
             // Start Clock
-            setInterval(() => {
+            if(window.absensiClock) clearInterval(window.absensiClock);
+            window.absensiClock = setInterval(() => {
                 const now = new Date();
                 document.getElementById('live-clock').innerText = now.toLocaleTimeString('id-ID');
             }, 1000);
 
-            // Get Location (Initial)
-            refreshLocation();
+            startCamera(); // Auto start camera for better UX
+            refreshLocation(); // This will trigger checkDistance -> updateButtonState
+        }
 
-            // Load History & Status
-            const r = await fetchGAS({action: 'get_today_absensi', nik: currentUser.nik});
-            if (r.status === 'success') {
-                const d = r.data;
-                const tb = document.getElementById('tb-absensi-hist');
-                
-                // Update Button State
-                const btnIn = document.getElementById('btn-in');
-                const btnOut = document.getElementById('btn-out');
-                
-                if (!d.hasIn) {
-                    btnIn.disabled = false;
-                    btnOut.disabled = true;
-                } else if (d.hasIn && !d.hasOut) {
-                    btnIn.disabled = true;
-                    btnIn.innerHTML = `<i class="fas fa-check"></i> Sudah Masuk (${d.timeIn})`;
-                    btnIn.classList.remove('btn-success'); btnIn.classList.add('btn-secondary');
-                    btnOut.disabled = false;
-                } else {
-                    btnIn.disabled = true;
-                    btnIn.innerHTML = `<i class="fas fa-check"></i> Masuk (${d.timeIn})`;
-                    btnIn.classList.remove('btn-success'); btnIn.classList.add('btn-secondary');
-                    
-                    btnOut.disabled = true;
-                    btnOut.innerHTML = `<i class="fas fa-check"></i> Pulang (${d.timeOut})`;
-                    btnOut.classList.remove('btn-danger'); btnOut.classList.add('btn-secondary');
-                }
+        // Logic Check Distance & Enable Buttons
+        function checkDistance(userLoc) {
+            if (!officeConfig || !officeConfig.lat || !officeConfig.lng) {
+                console.warn("Office settings missing");
+                return; 
+            }
 
-                // Render Table
-                if (d.history.length > 0) {
-                    tb.innerHTML = d.history.map(h => `<tr><td>${h.tanggal}</td><td>${h.masuk}</td><td>${h.pulang}</td><td><span class="badge bg-primary">${h.status}</span></td></tr>`).join('');
-                } else {
-                    tb.innerHTML = '<tr><td colspan="4" class="text-center">Belum ada data.</td></tr>';
-                }
+            const dist = getDistanceFromLatLonInMeters(userLoc.lat, userLoc.lng, parseFloat(officeConfig.lat), parseFloat(officeConfig.lng));
+            const maxRad = parseFloat(officeConfig.radius);
+            const inRadius = dist <= maxRad;
+
+            // Update UI Indicators
+            const badge = document.getElementById('radius-indicator');
+            const info = document.getElementById('dist-info');
+            
+            if (inRadius) {
+                badge.className = 'badge bg-success';
+                badge.innerHTML = `<i class="fas fa-check-circle"></i> Dalam Jangkauan`;
+                info.innerHTML = `<span class="text-success fw-bold">Jarak: ${Math.round(dist)}m (Aman)</span>`;
+            } else {
+                badge.className = 'badge bg-danger';
+                badge.innerHTML = `<i class="fas fa-times-circle"></i> Diluar Jangkauan`;
+                info.innerHTML = `<span class="text-danger fw-bold">Jarak: ${Math.round(dist)}m (Max: ${maxRad}m)</span>`;
+            }
+
+            updateButtonState(inRadius);
+        }
+
+        function updateButtonState(inRadius) {
+            const btnIn = document.getElementById('btn-in');
+            const btnOut = document.getElementById('btn-out');
+            const d = todayAbsensiData;
+
+            // Reset basics (disabled state)
+            btnIn.disabled = true;
+            btnOut.disabled = true;
+            
+            // Visual feedback
+            btnIn.innerHTML = `<i class="fas fa-sign-in-alt"></i> Absen Masuk`;
+            btnOut.innerHTML = `<i class="fas fa-sign-out-alt"></i> Absen Pulang`;
+
+            // Logic based on status
+            if (!d.hasIn) {
+                // Belum Masuk
+                if(inRadius) btnIn.disabled = false;
+                btnIn.className = inRadius ? 'btn btn-success btn-lg' : 'btn btn-secondary btn-lg opacity-50';
+                btnOut.className = 'btn btn-secondary btn-lg opacity-50';
+            } else if (d.hasIn && !d.hasOut) {
+                // Sudah Masuk, Belum Pulang
+                btnIn.innerHTML = `<i class="fas fa-check"></i> Masuk (${d.timeIn})`;
+                btnIn.className = 'btn btn-success btn-lg disabled opacity-75'; // Keep look but disabled
+                
+                if(inRadius) btnOut.disabled = false;
+                btnOut.className = inRadius ? 'btn btn-danger btn-lg' : 'btn btn-secondary btn-lg opacity-50';
+            } else {
+                // Selesai (Sudah Pulang)
+                btnIn.innerHTML = `<i class="fas fa-check"></i> Masuk (${d.timeIn})`;
+                btnOut.innerHTML = `<i class="fas fa-check"></i> Pulang (${d.timeOut})`;
+                btnIn.className = 'btn btn-success btn-lg disabled opacity-75';
+                btnOut.className = 'btn btn-danger btn-lg disabled opacity-75';
             }
         }
 
         async function startCamera() {
             const video = document.getElementById('camera-preview');
             const btn = document.getElementById('btn-camera');
+            if(btn) btn.style.display = 'none'; // Hide button if auto-started
+            
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
-                btn.style.display = 'none';
             } catch (err) {
                 Swal.fire('Kamera Error', 'Izinkan akses kamera di browser', 'error');
+                if(btn) btn.style.display = 'block';
             }
         }
 
@@ -735,24 +817,24 @@
                         checkDistance(userLocation);
                     },
                     (err) => {
-                        locEl.innerHTML = `<span class="text-danger">Gagal: ${err.message}</span>`;
+                        locEl.innerHTML = `<span class="text-danger">GPS Gagal: ${err.message}</span>`;
+                        updateButtonState(false); // Disable buttons on error
                     },
                     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                 );
             } else {
                 locEl.innerText = "GPS tidak didukung.";
+                updateButtonState(false);
             }
         }
 
-        function checkDistance(loc) {
-            console.log("Lokasi terdeteksi:", loc);
-        }
-
-        // Helper Distance
-        function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
-            var R = 6371; var dLat = deg2rad(lat2-lat1); var dLon = deg2rad(lon2-lon1); 
+        function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+            var R = 6371; 
+            var dLat = deg2rad(lat2-lat1); 
+            var dLon = deg2rad(lon2-lon1); 
             var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
-            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R * c;
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            return R * c * 1000;
         }
         function deg2rad(deg) { return deg * (Math.PI/180) }
 
