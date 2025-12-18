@@ -1049,10 +1049,35 @@
         }
         
         // --- MAINTENANCE (BACKUP & RESTORE) ---
-        function loadMaint() {
+        // 1. Tambah Toggle Auto Backup di UI
+        async function loadMaint() {
             const c = document.getElementById('ac');
+            c.innerHTML = '<div class="spinner-border text-primary"></div>';
+            
+            // Get Current Auto Backup Status
+            let autoBackupActive = false;
+            try {
+               const r = await fetchGAS({ action: 'admin_get_auto_backup_status' });
+               if(r.status === 'success') autoBackupActive = (r.data === 'ON');
+            } catch(e) {}
+
             c.innerHTML = `
                 <div class="row">
+                     <!-- AUTO BACKUP CARD -->
+                    <div class="col-12 mb-4">
+                        <div class="card p-3 border-0 bg-white shadow-sm border-start border-5 border-info">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-1"><i class="fas fa-robot text-info me-2"></i> Auto Backup Harian</h5>
+                                    <p class="text-muted small mb-0">Sistem akan mem-backup database ke Google Drive setiap hari jam 01:00.</p>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="toggleAutoBackup" style="width: 3em; height: 1.5em; cursor:pointer;" ${autoBackupActive ? 'checked' : ''} onchange="toggleAutoBackup(this)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
                     <div class="col-md-6 mb-3">
                         <div class="card p-4 shadow-sm border-0 bg-light">
                             <div class="text-center mb-3">
@@ -1076,6 +1101,35 @@
                     </div>
                 </div>
             `;
+        }
+        
+        // 2. JS Logic for Auto Backup
+        async function toggleAutoBackup(el) {
+            const isChecked = el.checked;
+            // Immediate feedback
+            Swal.fire({
+                title: isChecked ? 'Mengaktifkan...' : 'Menonaktifkan...',
+                text: 'Mohon tunggu sebentar',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+            
+            try {
+                const r = await fetchGAS({ 
+                    action: 'admin_toggle_auto_backup', 
+                    enable: isChecked 
+                });
+                
+                if (r.status === 'success') {
+                    Swal.fire('Berhasil', r.message, 'success');
+                } else {
+                    el.checked = !isChecked; // Revert UI
+                    Swal.fire('Gagal', r.message, 'error');
+                }
+            } catch (e) {
+                el.checked = !isChecked;
+                Swal.fire('Error', 'Gagal menghubungi server.', 'error');
+            }
         }
 
         async function performBackup() {
