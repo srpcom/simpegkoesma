@@ -113,6 +113,12 @@
         .nav-tabs .nav-link:hover { color: var(--primary); }
         .nav-tabs .nav-link.active { color: var(--primary); font-weight: 700; border-bottom: 3px solid var(--primary); background: transparent; }
         
+        /* Pagination */
+        .page-link { color: var(--primary); border: none; background: transparent; font-weight: 600; }
+        .page-link:hover { color: var(--primary-dark); background: #fff7ed; }
+        .page-item.active .page-link { background-color: var(--primary); border-color: var(--primary); color: white; border-radius: 5px; }
+        .page-item.disabled .page-link { color: #ccc; }
+
         /* --- LOGIN STYLING (ORANGE GLASS BATIK) --- */
         .login-wrapper { 
             min-height: 100vh; 
@@ -291,7 +297,6 @@
         <!-- Content -->
         <div class="main-content" id="main-content">
             <!-- Toggle Button (Visible on both PC & Mobile) -->
-            <!-- PERBAIKAN: Tombol ini sekarang terlihat di semua ukuran layar untuk toggle sidebar -->
             <button class="btn text-white mb-3 shadow-sm" onclick="toggleSidebar()" style="background-color: var(--primary); border: none;">
                 <i class="fas fa-bars"></i> Menu
             </button>
@@ -307,6 +312,10 @@
         let appData = {}; 
         let adminData = {}; 
         let selectedIds = []; 
+        
+        // --- PAGINATION STATE ---
+        let currentAdminPage = 1;
+        let adminSearchTimer = null;
 
         function toggleLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
         
@@ -564,8 +573,52 @@
         function switchAT(t) { document.querySelectorAll('.nav-tabs button').forEach(b=>{b.classList.remove('active');if(b.innerText.toLowerCase().includes(t))b.classList.add('active')}); if(t==='antrean')loadAA(); else if(t==='master')loadAM(); else loadAAr(); }
         async function loadAA() { const c=document.getElementById('ac'); c.innerHTML='<div class="spinner-border text-primary"></div>'; const r=await fetchGAS({action:'admin_get_pending'}); if(r.status==='success'){adminData=r.data; renderAAT(c);}else c.innerHTML='Error'; }
         function renderAAT(c) { let h=''; const ts=[{id:'tb_profil',l:'Profil'},{id:'tb_pangkat',l:'Pangkat'},{id:'tb_jabatan',l:'Jabatan'},{id:'tb_keluarga',l:'Keluarga'},{id:'tb_kartu',l:'Kartu'}]; let hd=false; ts.forEach(t=>{const l=adminData[t.id]||[]; if(l.length>0){hd=true; let r=l.map(i=>`<tr><td><input type="checkbox" class="cb-${t.id}" value="${i.ID||i.NIK}" onchange="upVB('${t.id}')"></td><td><b>${i.Nama||'-'}</b><br>${i.NIK||i.NIK_Pegawai}</td><td><small>${JSON.stringify(i).slice(0,50)}...</small></td></tr>`).join(''); h+=`<div class="card mb-3"><div class="card-header d-flex justify-content-between"><b>${t.l}</b><button class="btn btn-sm btn-success" id="btn-v-${t.id}" onclick="exBV('${t.id}')" disabled>Verif</button></div><table class="table table-sm mb-0"><tbody>${r}</tbody></table></div>`}}); c.innerHTML=hd?h:'<div class="text-center p-4">Tidak ada antrean.</div>'; }
-        async function loadAM() { const c=document.getElementById('ac'); c.innerHTML='<div class="spinner-border text-primary"></div>'; const r=await fetchGAS({action:'admin_get_table',table:'tb_profil'}); if(r.status==='success'){ const rw=r.data.map((p,i)=>`<tr><td>${i+1}</td><td><img src="${getImgUrl(p.Foto_Profil)}" class="rounded-circle me-2" width="40"><b>${p.Nama}</b><br>${p.NIP||p.NIK}</td><td>${p.Pendidikan||'-'}</td><td>${p.Jabatan_Terakhir||'-'}</td><td><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi}</span></td><td><button onclick="showDetailUser('${p.NIK}')" class="btn btn-sm btn-info text-white me-1"><i class="fas fa-eye"></i></button> <button onclick="showFullEditUser('${p.NIK}')" class="btn btn-sm btn-warning text-dark"><i class="fas fa-pencil-alt"></i></button></td></tr>`).join(''); c.innerHTML=`<div class="mb-2"><input id="sm" class="form-control w-50" placeholder="Cari..." onkeyup="filtM()"></div><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>No</th><th>Nama/NIP</th><th>Jabatan</th><th>Sts</th><th>Aksi</th></tr></thead><tbody id="tb-m">${rw}</tbody></table></div>`; } }
-        function filtM() { const v=document.getElementById('sm').value.toLowerCase(); document.querySelectorAll('#tb-m tr').forEach(r=>{r.style.display=r.innerText.toLowerCase().includes(v)?'':'none'}); }
+        
+        // [UPDATED] FUNCTION LOAD ADMIN MASTER (PAGINATION)
+        async function loadAM(page = 1) { 
+            const c=document.getElementById('ac'); 
+            const searchValue = document.getElementById('sm') ? document.getElementById('sm').value : '';
+            
+            // Only show loader if initial load or page change (not typing)
+            if(!document.getElementById('tb-m')) c.innerHTML='<div class="spinner-border text-primary"></div>'; 
+            else {
+                // small visual indicator for searching
+                 const tbm = document.getElementById('tb-m');
+                 if(tbm) tbm.style.opacity = '0.5';
+            }
+
+            const r=await fetchGAS({action:'admin_get_table', table:'tb_profil', page: page, limit: 10, search: searchValue}); 
+            
+            if(r.status==='success'){ 
+                const rw=r.data.map((p,i)=>`<tr><td>${((r.pagination.currentPage-1)*r.pagination.itemsPerPage) + (i+1)}</td><td><img src="${getImgUrl(p.Foto_Profil)}" class="rounded-circle me-2" width="40"><b>${p.Nama}</b><br>${p.NIP||p.NIK}</td><td>${p.Pendidikan||'-'}</td><td>${p.Jabatan_Terakhir||'-'}</td><td><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi}</span></td><td><button onclick="showDetailUser('${p.NIK}')" class="btn btn-sm btn-info text-white me-1"><i class="fas fa-eye"></i></button> <button onclick="showFullEditUser('${p.NIK}')" class="btn btn-sm btn-warning text-dark"><i class="fas fa-pencil-alt"></i></button></td></tr>`).join(''); 
+                
+                // Pagination Controls
+                const totalP = r.pagination.totalPages;
+                const currP = r.pagination.currentPage;
+                let pagHTML = `<nav><ul class="pagination justify-content-center mt-3">`;
+                
+                // Prev
+                pagHTML += `<li class="page-item ${currP === 1 ? 'disabled' : ''}"><button class="page-link" onclick="loadAM(${currP - 1})">Prev</button></li>`;
+                
+                // Info Text
+                pagHTML += `<li class="page-item disabled"><span class="page-link text-dark border-0">Hal ${currP} dari ${totalP} (Total: ${r.pagination.totalItems})</span></li>`;
+                
+                // Next
+                pagHTML += `<li class="page-item ${currP === totalP ? 'disabled' : ''}"><button class="page-link" onclick="loadAM(${currP + 1})">Next</button></li>`;
+                pagHTML += `</ul></nav>`;
+
+                c.innerHTML=`<div class="mb-2"><input id="sm" class="form-control w-100" placeholder="Cari Nama/NIP..." value="${searchValue}" onkeyup="searchMasterDebounce(this)"></div><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>No</th><th>Nama/NIP</th><th>Jabatan</th><th>Sts</th><th>Aksi</th></tr></thead><tbody id="tb-m">${rw}</tbody></table></div>${pagHTML}`; 
+            } else {
+                c.innerHTML = '<div class="alert alert-danger">Gagal memuat data.</div>';
+            }
+        }
+        
+        function searchMasterDebounce(el) {
+            clearTimeout(adminSearchTimer);
+            adminSearchTimer = setTimeout(() => {
+                loadAM(1); // Reset to page 1 on search
+            }, 600); // 600ms delay
+        }
         
         // [NEW] FUNCTION SHOW FULL DETAIL USER
         async function showDetailUser(targetNik) {
