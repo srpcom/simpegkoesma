@@ -47,9 +47,17 @@
         .sidebar.collapsed { left: -260px; } 
 
         .sidebar .nav-link { 
-            color: rgba(255,255,255,0.85); margin: 6px 15px; border-radius: 10px; font-weight: 500; 
-            cursor: pointer; position: relative; z-index: 1051;
+            color: rgba(255,255,255,0.85); 
+            margin: 4px 12px; /* Adjusted margin */
+            padding: 10px 15px; /* Adjusted padding */
+            border-radius: 10px; 
+            font-weight: 500; 
+            cursor: pointer; 
+            position: relative; 
+            z-index: 1051;
             transition: all 0.3s ease;
+            font-size: 0.85rem; /* PERBAIKAN: Font diperkecil */
+            white-space: nowrap; /* PERBAIKAN: Memaksa 1 baris */
         }
         .sidebar .nav-link:hover, .sidebar .nav-link.active { 
             background: rgba(255, 255, 255, 0.2); 
@@ -58,7 +66,7 @@
             backdrop-filter: blur(5px);
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .sidebar .nav-link i { width: 25px; }
+        .sidebar .nav-link i { width: 20px; text-align: center; margin-right: 8px; }
         
         .main-content { margin-left: 260px; padding: 25px; transition: all 0.3s; }
         .main-content.expanded { margin-left: 0; }
@@ -283,7 +291,8 @@
         <!-- Content -->
         <div class="main-content" id="main-content">
             <!-- Toggle Button (Visible on both PC & Mobile) -->
-            <button class="btn btn-warning text-white d-md-none mb-3 shadow-sm" onclick="toggleSidebar()" style="background-color: var(--primary);">
+            <!-- PERBAIKAN: Tombol ini sekarang terlihat di semua ukuran layar untuk toggle sidebar -->
+            <button class="btn text-white mb-3 shadow-sm" onclick="toggleSidebar()" style="background-color: var(--primary); border: none;">
                 <i class="fas fa-bars"></i> Menu
             </button>
             <div id="view-container"></div>
@@ -680,4 +689,3 @@
     </script>
 </body>
 </html>
-
