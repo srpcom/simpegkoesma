@@ -569,8 +569,29 @@
         async function fetchGAS(p) { const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(p)}); return await r.json(); }
 
         // --- ADMIN ---
-        function renderAdminDashboardV2(c) { c.innerHTML=`<div class="card p-4"><h4 class="fw-bold mb-3 text-primary">Admin Dashboard</h4><ul class="nav nav-tabs mb-3"><li class="nav-item"><button class="nav-link active" onclick="switchAT('antrean')">Antrean</button></li><li class="nav-item"><button class="nav-link" onclick="switchAT('master')">Master Pegawai</button></li><li class="nav-item"><button class="nav-link" onclick="switchAT('arsip')">Arsip Data</button></li></ul><div id="ac"></div></div>`; switchAT('antrean'); }
-        function switchAT(t) { document.querySelectorAll('.nav-tabs button').forEach(b=>{b.classList.remove('active');if(b.innerText.toLowerCase().includes(t))b.classList.add('active')}); if(t==='antrean')loadAA(); else if(t==='master')loadAM(); else loadAAr(); }
+        function renderAdminDashboardV2(c) { 
+            c.innerHTML=`
+            <div class="card p-4">
+                <h4 class="fw-bold mb-3 text-primary">Admin Dashboard</h4>
+                <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item"><button class="nav-link active" onclick="switchAT('antrean')">Antrean</button></li>
+                    <li class="nav-item"><button class="nav-link" onclick="switchAT('master')">Master Pegawai</button></li>
+                    <li class="nav-item"><button class="nav-link" onclick="switchAT('users')">Manajemen User</button></li>
+                    <li class="nav-item"><button class="nav-link" onclick="switchAT('arsip')">Arsip Data</button></li>
+                </ul>
+                <div id="ac"></div>
+            </div>`; 
+            switchAT('antrean'); 
+        }
+        
+        function switchAT(t) { 
+            document.querySelectorAll('.nav-tabs button').forEach(b=>{b.classList.remove('active');if(b.innerText.toLowerCase().includes(t.includes('users')?'user':t))b.classList.add('active')}); 
+            if(t==='antrean') loadAA(); 
+            else if(t==='master') loadAM(); 
+            else if(t==='users') loadAU(); // New: Load Users
+            else loadAAr(); 
+        }
+        
         async function loadAA() { const c=document.getElementById('ac'); c.innerHTML='<div class="spinner-border text-primary"></div>'; const r=await fetchGAS({action:'admin_get_pending'}); if(r.status==='success'){adminData=r.data; renderAAT(c);}else c.innerHTML='Error'; }
         function renderAAT(c) { let h=''; const ts=[{id:'tb_profil',l:'Profil'},{id:'tb_pangkat',l:'Pangkat'},{id:'tb_jabatan',l:'Jabatan'},{id:'tb_keluarga',l:'Keluarga'},{id:'tb_kartu',l:'Kartu'}]; let hd=false; ts.forEach(t=>{const l=adminData[t.id]||[]; if(l.length>0){hd=true; let r=l.map(i=>`<tr><td><input type="checkbox" class="cb-${t.id}" value="${i.ID||i.NIK}" onchange="upVB('${t.id}')"></td><td><b>${i.Nama||'-'}</b><br>${i.NIK||i.NIK_Pegawai}</td><td><small>${JSON.stringify(i).slice(0,50)}...</small></td></tr>`).join(''); h+=`<div class="card mb-3"><div class="card-header d-flex justify-content-between"><b>${t.l}</b><button class="btn btn-sm btn-success" id="btn-v-${t.id}" onclick="exBV('${t.id}')" disabled>Verif</button></div><table class="table table-sm mb-0"><tbody>${r}</tbody></table></div>`}}); c.innerHTML=hd?h:'<div class="text-center p-4">Tidak ada antrean.</div>'; }
         
@@ -618,6 +639,96 @@
             adminSearchTimer = setTimeout(() => {
                 loadAM(1); // Reset to page 1 on search
             }, 600); // 600ms delay
+        }
+
+        // [NEW] LOAD ADMIN USERS (MANAJEMEN USER)
+        async function loadAU(page = 1) {
+            const c=document.getElementById('ac');
+            c.innerHTML='<div class="spinner-border text-primary"></div>';
+            
+            // Reusing admin_get_table for tb_users
+            const r=await fetchGAS({action:'admin_get_table', table:'tb_users', page: page, limit: 10});
+
+            if(r.status==='success'){
+                const rw=r.data.map((u,i)=>`
+                    <tr>
+                        <td>${((r.pagination.currentPage-1)*r.pagination.itemsPerPage) + (i+1)}</td>
+                        <td><b>${u.Nama}</b><br>${u.NIK}</td>
+                        <td>${u.Email}</td>
+                        <td><span class="text-muted">******</span></td>
+                        <td><span class="badge bg-${u.Role==='ADMIN'?'danger':'primary'}">${u.Role}</span></td>
+                        <td>${u.Registered_At}</td>
+                        <td>
+                            <button onclick='editUserAdmin(${JSON.stringify(u)})' class="btn btn-sm btn-warning text-dark me-1" title="Edit User"><i class="fas fa-edit"></i></button>
+                            <button onclick="resetPassAdmin('${u.NIK}', '${u.Nama}')" class="btn btn-sm btn-dark" title="Reset Password"><i class="fas fa-key"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+                
+                // Pagination
+                const totalP = r.pagination.totalPages;
+                const currP = r.pagination.currentPage;
+                let pagHTML = `<nav><ul class="pagination justify-content-center mt-3">`;
+                pagHTML += `<li class="page-item ${currP === 1 ? 'disabled' : ''}"><button class="page-link" onclick="loadAU(${currP - 1})">Prev</button></li>`;
+                pagHTML += `<li class="page-item disabled"><span class="page-link text-dark border-0">Hal ${currP} dari ${totalP}</span></li>`;
+                pagHTML += `<li class="page-item ${currP === totalP ? 'disabled' : ''}"><button class="page-link" onclick="loadAU(${currP + 1})">Next</button></li>`;
+                pagHTML += `</ul></nav>`;
+
+                c.innerHTML=`
+                    <div class="alert alert-info py-2 small"><i class="fas fa-info-circle"></i> Password hanya ditampilkan sebagai (******) untuk keamanan. Gunakan tombol kunci untuk mereset.</div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light"><tr><th>No</th><th>Nama/NIK</th><th>Email</th><th>Password</th><th>Role</th><th>Reg Date</th><th>Aksi</th></tr></thead>
+                            <tbody>${rw}</tbody>
+                        </table>
+                    </div>${pagHTML}`;
+            } else {
+                c.innerHTML = '<div class="alert alert-danger">Gagal memuat data user.</div>';
+            }
+        }
+
+        async function editUserAdmin(u) {
+            const {value:v} = await Swal.fire({
+                title: 'Edit User',
+                html: `
+                    <div class="swal-form-group"><label class="swal-form-label">Nama</label><input id="eu-nama" class="form-control" value="${u.Nama}"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Email</label><input id="eu-email" class="form-control" value="${u.Email}"></div>
+                    <div class="swal-form-group"><label class="swal-form-label">Role</label><select id="eu-role" class="form-select"><option value="USER" ${u.Role==='USER'?'selected':''}>USER</option><option value="ADMIN" ${u.Role==='ADMIN'?'selected':''}>ADMIN</option></select></div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Simpan',
+                preConfirm: () => {
+                    return { nik: u.NIK, nama: document.getElementById('eu-nama').value, email: document.getElementById('eu-email').value, role: document.getElementById('eu-role').value }
+                }
+            });
+
+            if(v) {
+                toggleLoading(true);
+                const r = await fetchGAS({action: 'admin_update_user', ...v});
+                toggleLoading(false);
+                if(r.status === 'success') { Swal.fire('Sukses', 'Data user diupdate', 'success'); loadAU(); }
+                else Swal.fire('Gagal', r.message, 'error');
+            }
+        }
+
+        async function resetPassAdmin(nik, nama) {
+            const {value:pass} = await Swal.fire({
+                title: 'Reset Password',
+                text: `Masukkan password baru untuk ${nama}`,
+                input: 'text',
+                inputPlaceholder: 'Password Baru...',
+                showCancelButton: true,
+                confirmButtonText: 'Reset',
+                inputValidator: (value) => { if (!value || value.length < 6) return 'Minimal 6 karakter!' }
+            });
+
+            if(pass) {
+                toggleLoading(true);
+                const r = await fetchGAS({action: 'admin_reset_password', nik: nik, newPass: pass});
+                toggleLoading(false);
+                if(r.status === 'success') Swal.fire('Sukses', 'Password berhasil direset.', 'success');
+                else Swal.fire('Gagal', r.message, 'error');
+            }
         }
         
         // [NEW] FUNCTION SHOW FULL DETAIL USER
