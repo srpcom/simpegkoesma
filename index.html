@@ -723,7 +723,9 @@
                 document.getElementById('live-clock').innerText = now.toLocaleTimeString('id-ID');
             }, 1000);
 
-            startCamera(); // Auto start camera for better UX
+            // [PERBAIKAN] Tidak Auto-Start Kamera
+            // startCamera(); 
+            
             refreshLocation(); // This will trigger checkDistance -> updateButtonState
         }
 
@@ -793,11 +795,14 @@
         async function startCamera() {
             const video = document.getElementById('camera-preview');
             const btn = document.getElementById('btn-camera');
-            if(btn) btn.style.display = 'none'; // Hide button if auto-started
+            const ph = document.getElementById('cam-placeholder'); // Get placeholder
+            
+            if(btn) btn.style.display = 'none'; 
             
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
+                if(ph) ph.style.display = 'none'; // Hide placeholder when camera starts
             } catch (err) {
                 Swal.fire('Kamera Error', 'Izinkan akses kamera di browser', 'error');
                 if(btn) btn.style.display = 'block';
@@ -846,12 +851,24 @@
             const canvas = document.getElementById('camera-canvas');
             const context = canvas.getContext('2d');
             
-            // Capture Foto
-            canvas.width = 320; // Resize agar ringan
+            // 1. Capture Image
+            canvas.width = 320; 
             canvas.height = 240;
             context.drawImage(video, 0, 0, 320, 240);
-            const imageBase64 = canvas.toDataURL('image/jpeg', 0.7); // Kompresi 0.7
+            const imageBase64 = canvas.toDataURL('image/jpeg', 0.7); 
 
+            // 2. [PERBAIKAN] STOP CAMERA IMMEDIATELY
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+                video.srcObject = null;
+                
+                // Show placeholder to indicate camera is off
+                const ph = document.getElementById('cam-placeholder');
+                if(ph) ph.style.display = 'block';
+            }
+
+            // 3. Send Data
             toggleLoading(true);
             const r = await fetchGAS({
                 action: 'submit_absensi',
@@ -864,9 +881,12 @@
 
             if (r.status === 'success') {
                 Swal.fire('Berhasil', r.message, 'success');
-                renderAbsensi(document.getElementById('view-container')); // Refresh
+                renderAbsensi(document.getElementById('view-container')); 
             } else {
                 Swal.fire('Gagal', r.message, 'error');
+                // Tampilkan kembali tombol nyalakan kamera jika gagal
+                const btnCamera = document.getElementById('btn-camera');
+                if(btnCamera) btnCamera.style.display = 'block';
             }
         }
 
