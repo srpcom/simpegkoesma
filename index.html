@@ -681,7 +681,7 @@
             const r=await fetchGAS({action:'admin_get_table', table:'tb_profil', page: page, limit: 10, search: searchValue}); 
             
             if(r.status==='success'){ 
-                const rw=r.data.map((p,i)=>`<tr><td>${((r.pagination.currentPage-1)*r.pagination.itemsPerPage) + (i+1)}</td><td><img src="${getImgUrl(p.Foto_Profil)}" class="rounded-circle me-2" width="40"><b>${p.Nama}</b><br>${p.NIP||p.NIK}</td><td>${p.Pendidikan||'-'}</td><td>${p.Jabatan_Terakhir||'-'}</td><td><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi}</span></td><td><button onclick="showDetailUser('${p.NIK}')" class="btn btn-sm btn-info text-white me-1"><i class="fas fa-eye"></i></button> <button onclick="showFullEditUser('${p.NIK}')" class="btn btn-sm btn-warning text-dark"><i class="fas fa-pencil-alt"></i></button></td></tr>`).join(''); 
+                const rw=r.data.map((p,i)=>`<tr><td>${((r.pagination.currentPage-1)*r.pagination.itemsPerPage) + (i+1)}</td><td><img src="${getImgUrl(p.Foto_Profil)}" class="rounded-circle me-2" width="40"><b>${p.Nama}</b><br>${p.NIP||p.NIK}</td><td>${p.Jabatan_Terakhir||'-'}</td><td><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi}</span></td><td><button onclick="showDetailUser('${p.NIK}')" class="btn btn-sm btn-info text-white me-1"><i class="fas fa-eye"></i></button> <button onclick="showFullEditUser('${p.NIK}')" class="btn btn-sm btn-warning text-dark"><i class="fas fa-pencil-alt"></i></button></td></tr>`).join(''); 
                 
                 // Pagination Controls
                 const totalP = r.pagination.totalPages;
