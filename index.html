@@ -56,8 +56,8 @@
             position: relative; 
             z-index: 1051;
             transition: all 0.3s ease;
-            font-size: 0.85rem; /* PERBAIKAN: Font diperkecil */
-            white-space: nowrap; /* PERBAIKAN: Memaksa 1 baris */
+            font-size: 0.85rem; 
+            white-space: nowrap;
         }
         .sidebar .nav-link:hover, .sidebar .nav-link.active { 
             background: rgba(255, 255, 255, 0.2); 
@@ -289,7 +289,7 @@
                 <li class="nav-item"><a class="nav-link" onclick="navTo('jabatan')" style="cursor: pointer;"><i class="fas fa-briefcase me-2"></i> Riwayat Jabatan</a></li>
                 <li class="nav-item"><a class="nav-link" onclick="navTo('keluarga')" style="cursor: pointer;"><i class="fas fa-users me-2"></i> Anggota Keluarga</a></li>
                 <li class="nav-item"><a class="nav-link" onclick="navTo('kartu')" style="cursor: pointer;"><i class="fas fa-id-card me-2"></i> Data Kartu</a></li>
-                <li class="nav-item d-none" id="menu-admin"><a class="nav-link bg-white text-danger mt-3 shadow-sm" onclick="navTo('admin')" style="color: var(--primary) !important; cursor: pointer;"><i class="fas fa-user-shield me-2"></i> Admin Dashboard</a></li>
+                <li class="nav-item d-none" id="menu-admin"><a class="nav-link bg-white text-danger mt-3 shadow-sm" onclick="navTo('antrean')" style="color: var(--primary) !important; cursor: pointer;"><i class="fas fa-user-shield me-2"></i> Admin Dashboard</a></li>
             </ul>
             <div class="mt-auto"><button onclick="logout()" class="btn btn-outline-light w-100"><i class="fas fa-sign-out-alt me-2"></i> Logout</button></div>
         </div>
@@ -386,11 +386,28 @@
         function processCurrentHash() {
             let hash = window.location.hash.substring(1); 
             if(!hash) hash = 'profil';
+            
+            // Mapping URL Friendly Hash
             if (hash === 'riwayatjabatan') hash = 'jabatan';
             else if (hash === 'riwayatpangkat') hash = 'pangkat';
             else if (hash === 'anggotakeluarga') hash = 'keluarga';
             else if (hash === 'datakartu') hash = 'kartu';
-            if (hash === 'admin' && currentUser.role !== 'ADMIN') hash = 'profil';
+            
+            // Admin Pages Logic
+            const adminTabs = ['antrean', 'masterpegawai', 'manajemenuser', 'arsipdata'];
+            
+            if (hash === 'admin') hash = 'antrean'; // Default Admin Page
+            
+            if (adminTabs.includes(hash)) {
+                if (currentUser.role !== 'ADMIN') {
+                    Swal.fire('Akses Ditolak', 'Hanya untuk Admin', 'warning');
+                    hash = 'profil';
+                } else {
+                    renderPage('admin', hash);
+                    return; // Stop here, handled by special admin renderer
+                }
+            }
+            
             renderPage(hash);
         }
         
@@ -409,26 +426,37 @@
             else if (page === 'pangkat') urlHash = 'riwayatpangkat';
             else if (page === 'keluarga') urlHash = 'anggotakeluarga';
             else if (page === 'kartu') urlHash = 'datakartu';
+            
+            // Admin Navigation
+            if (page === 'admin') urlHash = 'antrean'; 
 
             // Set Hash (Triggers hashchange -> processCurrentHash -> renderPage)
             window.location.hash = urlHash;
         }
 
-        function renderPage(page) {
+        function renderPage(page, subPage = null) {
             document.querySelectorAll('.nav-link').forEach(e=>e.classList.remove('active'));
-            let menuKey = page; // fallback
-            if(page==='pangkat') menuKey='pangkat'; 
+            let menuKey = page; 
+            
+            // Handle admin menu active state
+            if (page === 'admin' || ['antrean', 'masterpegawai', 'manajemenuser', 'arsipdata'].includes(subPage)) {
+                menuKey = 'antrean'; // Highlights Admin Dashboard Menu
+            } else if(page==='pangkat') menuKey='pangkat'; 
             else if(page==='jabatan') menuKey='jabatan';
+            
             const menu = document.querySelector(`[onclick="navTo('${menuKey}')"]`);
             if(menu) menu.classList.add('active');
             
             const container = document.getElementById('view-container');
-            if(page==='profil') renderProfil(container);
+            
+            if (page === 'admin') {
+                renderAdminDashboardV2(container, subPage);
+            }
+            else if(page==='profil') renderProfil(container);
             else if(page==='pangkat') renderTable(container,'Riwayat Pangkat','tb_pangkat');
             else if(page==='jabatan') renderTable(container,'Riwayat Jabatan','tb_jabatan');
             else if(page==='keluarga') renderTable(container,'Anggota Keluarga','tb_keluarga');
             else if(page==='kartu') renderTable(container,'Data Kartu Identitas','tb_kartu');
-            else if(page==='admin') renderAdminDashboardV2(container);
         }
 
         function renderTable(c,t,tn) { 
@@ -588,23 +616,46 @@
         async function fetchGAS(p) { const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(p)}); return await r.json(); }
 
         // --- ADMIN ---
-        function renderAdminDashboardV2(c) { 
+        function renderAdminDashboardV2(c, activeTab) { 
             c.innerHTML=`
             <div class="card p-4">
                 <h4 class="fw-bold mb-3 text-primary">Admin Dashboard</h4>
                 <ul class="nav nav-tabs mb-3">
-                    <li class="nav-item"><button class="nav-link active" onclick="switchAT('antrean')">Antrean</button></li>
-                    <li class="nav-item"><button class="nav-link" onclick="switchAT('master')">Master Pegawai</button></li>
-                    <li class="nav-item"><button class="nav-link" onclick="switchAT('users')">Manajemen User</button></li>
-                    <li class="nav-item"><button class="nav-link" onclick="switchAT('arsip')">Arsip Data</button></li>
+                    <li class="nav-item"><button class="nav-link" onclick="location.hash='antrean'">Antrean</button></li>
+                    <li class="nav-item"><button class="nav-link" onclick="location.hash='masterpegawai'">Master Pegawai</button></li>
+                    <li class="nav-item"><button class="nav-link" onclick="location.hash='manajemenuser'">Manajemen User</button></li>
+                    <li class="nav-item"><button class="nav-link" onclick="location.hash='arsipdata'">Arsip Data</button></li>
                 </ul>
                 <div id="ac"></div>
             </div>`; 
-            switchAT('antrean'); 
+            
+            // Map external hash to internal ID
+            const tabMap = {
+                'antrean': 'antrean',
+                'masterpegawai': 'master',
+                'manajemenuser': 'users',
+                'arsipdata': 'arsip'
+            };
+            
+            switchAT(tabMap[activeTab] || 'antrean'); 
         }
         
         function switchAT(t) { 
-            document.querySelectorAll('.nav-tabs button').forEach(b=>{b.classList.remove('active');if(b.innerText.toLowerCase().includes(t.includes('users')?'user':t))b.classList.add('active')}); 
+            // Highlight active tab (Visual)
+            // Need to match the button text/hash because buttons now set location.hash
+            const reverseMap = {
+                'antrean': 'antrean',
+                'master': 'masterpegawai',
+                'users': 'manajemenuser',
+                'arsip': 'arsipdata'
+            };
+            const targetHash = reverseMap[t];
+            
+            document.querySelectorAll('.nav-tabs button').forEach(b=>{
+                b.classList.remove('active');
+                if(b.getAttribute('onclick').includes(targetHash)) b.classList.add('active');
+            }); 
+            
             if(t==='antrean') loadAA(); 
             else if(t==='master') loadAM(); 
             else if(t==='users') loadAU(); // New: Load Users
