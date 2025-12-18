@@ -397,7 +397,7 @@
             else if (hash === 'datakartu') hash = 'kartu';
             
             // Admin Pages Logic
-            const adminTabs = ['antrean', 'masterpegawai', 'manajemenuser', 'arsipdata'];
+            const adminTabs = ['antrean', 'masterpegawai', 'manajemenuser', 'arsipdata', 'pengaturan']; // Add 'pengaturan'
             
             if (hash === 'admin') hash = 'antrean'; 
             
@@ -442,7 +442,7 @@
             document.querySelectorAll('.nav-link').forEach(e=>e.classList.remove('active'));
             let menuKey = page; 
             
-            if (page === 'admin' || ['antrean', 'masterpegawai', 'manajemenuser', 'arsipdata'].includes(subPage)) {
+            if (page === 'admin' || ['antrean', 'masterpegawai', 'manajemenuser', 'arsipdata', 'pengaturan'].includes(subPage)) {
                 menuKey = 'antrean'; 
             } else if(page==='pangkat') menuKey='pangkat'; 
             else if(page==='jabatan') menuKey='jabatan';
@@ -696,12 +696,6 @@
                 const btnIn = document.getElementById('btn-in');
                 const btnOut = document.getElementById('btn-out');
                 
-                // Reset buttons first (disabled by default in HTML)
-                // Logic: 
-                // Belum absen masuk -> Masuk Enable, Pulang Disable
-                // Sudah masuk, belum pulang -> Masuk Disable, Pulang Enable
-                // Sudah masuk, sudah pulang -> Masuk Disable, Pulang Disable
-                
                 if (!d.hasIn) {
                     btnIn.disabled = false;
                     btnOut.disabled = true;
@@ -742,15 +736,6 @@
         }
 
         function checkDistance(loc) {
-            // Koordinat RSUD dr. R. Koesma (Example: -6.894, 112.046) - Sesuaikan dengan Real
-            // Disini saya pakai radius lebar dulu agar bisa ditest dimana saja
-            // const rsudLoc = { lat: -6.8943, lng: 112.0467 }; 
-            // const dist = getDistanceFromLatLonInKm(loc.lat, loc.lng, rsudLoc.lat, rsudLoc.lng);
-            // if (dist > 0.5) { // 500 meter
-            //    Swal.fire('Diluar Jangkauan', 'Anda berada diluar radius RSUD', 'warning');
-            //    document.getElementById('btn-in').disabled = true;
-            //    document.getElementById('btn-out').disabled = true;
-            // }
             console.log("Lokasi terdeteksi:", loc);
         }
 
@@ -804,6 +789,7 @@
                     <li class="nav-item"><button class="nav-link" onclick="location.hash='masterpegawai'">Master Pegawai</button></li>
                     <li class="nav-item"><button class="nav-link" onclick="location.hash='manajemenuser'">Manajemen User</button></li>
                     <li class="nav-item"><button class="nav-link" onclick="location.hash='arsipdata'">Arsip Data</button></li>
+                    <li class="nav-item"><button class="nav-link" onclick="location.hash='pengaturan'">Pengaturan</button></li>
                 </ul>
                 <div id="ac"></div>
             </div>`; 
@@ -813,20 +799,20 @@
                 'antrean': 'antrean',
                 'masterpegawai': 'master',
                 'manajemenuser': 'users',
-                'arsipdata': 'arsip'
+                'arsipdata': 'arsip',
+                'pengaturan': 'pengaturan'
             };
             
             switchAT(tabMap[activeTab] || 'antrean'); 
         }
         
         function switchAT(t) { 
-            // Highlight active tab (Visual)
-            // Need to match the button text/hash because buttons now set location.hash
             const reverseMap = {
                 'antrean': 'antrean',
                 'master': 'masterpegawai',
                 'users': 'manajemenuser',
-                'arsip': 'arsipdata'
+                'arsip': 'arsipdata',
+                'pengaturan': 'pengaturan'
             };
             const targetHash = reverseMap[t];
             
@@ -837,8 +823,95 @@
             
             if(t==='antrean') loadAA(); 
             else if(t==='master') loadAM(); 
-            else if(t==='users') loadAU(); // New: Load Users
+            else if(t==='users') loadAU(); 
+            else if(t==='pengaturan') loadAS(); // New: Load Settings
             else loadAAr(); 
+        }
+        
+        // --- ADMIN SETTINGS (NEW) ---
+        async function loadAS() {
+            const c = document.getElementById('ac');
+            c.innerHTML = '<div class="spinner-border text-primary"></div>';
+            
+            const r = await fetchGAS({action: 'get_settings'});
+            
+            if(r.status === 'success') {
+                const s = r.data;
+                c.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card p-3 shadow-sm bg-light">
+                                <h6 class="fw-bold mb-3 text-primary"><i class="fas fa-map-marked-alt"></i> Lokasi Kantor</h6>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Latitude (Garis Lintang)</label>
+                                    <input type="text" id="set-lat" class="form-control" placeholder="-6.12345" value="${s.lat}">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Longitude (Garis Bujur)</label>
+                                    <input type="text" id="set-lng" class="form-control" placeholder="112.12345" value="${s.lng}">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Radius Absensi (Meter)</label>
+                                    <input type="number" id="set-rad" class="form-control" placeholder="100" value="${s.radius}">
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-primary btn-sm" onclick="getAdminLocation()"><i class="fas fa-location-arrow"></i> Ambil Lokasi Saya Saat Ini</button>
+                                    <button class="btn btn-primary" onclick="saveSettings()"><i class="fas fa-save"></i> Simpan Pengaturan</button>
+                                </div>
+                                <div class="mt-2 small text-muted">
+                                    <i class="fas fa-info-circle"></i> Pastikan Anda berada di lokasi kantor saat menekan tombol "Ambil Lokasi Saya".
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                c.innerHTML = '<div class="alert alert-danger">Gagal memuat pengaturan.</div>';
+            }
+        }
+
+        function getAdminLocation() {
+            if (navigator.geolocation) {
+                toggleLoading(true);
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        toggleLoading(false);
+                        document.getElementById('set-lat').value = pos.coords.latitude;
+                        document.getElementById('set-lng').value = pos.coords.longitude;
+                        Swal.fire('Sukses', 'Koordinat lokasi berhasil diambil.', 'success');
+                    },
+                    (err) => {
+                        toggleLoading(false);
+                        Swal.fire('Error GPS', err.message, 'error');
+                    },
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                Swal.fire('Error', 'Browser tidak mendukung GPS.', 'error');
+            }
+        }
+
+        async function saveSettings() {
+            const lat = document.getElementById('set-lat').value;
+            const lng = document.getElementById('set-lng').value;
+            const rad = document.getElementById('set-rad').value;
+
+            if (!lat || !lng || !rad) return Swal.fire('Warning', 'Semua field harus diisi!', 'warning');
+
+            toggleLoading(true);
+            const r = await fetchGAS({
+                action: 'save_settings',
+                lat: lat,
+                lng: lng,
+                radius: rad
+            });
+            toggleLoading(false);
+
+            if(r.status === 'success') {
+                Swal.fire('Sukses', 'Pengaturan lokasi berhasil disimpan.', 'success');
+            } else {
+                Swal.fire('Gagal', r.message, 'error');
+            }
         }
         
         async function loadAA() { const c=document.getElementById('ac'); c.innerHTML='<div class="spinner-border text-primary"></div>'; const r=await fetchGAS({action:'admin_get_pending'}); if(r.status==='success'){adminData=r.data; renderAAT(c);}else c.innerHTML='Error'; }
@@ -848,32 +921,19 @@
         async function loadAM(page = 1) { 
             const c=document.getElementById('ac'); 
             const searchValue = document.getElementById('sm') ? document.getElementById('sm').value : '';
-            
-            // Only show loader if initial load or page change (not typing)
             if(!document.getElementById('tb-m')) c.innerHTML='<div class="spinner-border text-primary"></div>'; 
-            else {
-                // small visual indicator for searching
-                 const tbm = document.getElementById('tb-m');
-                 if(tbm) tbm.style.opacity = '0.5';
-            }
+            else { const tbm = document.getElementById('tb-m'); if(tbm) tbm.style.opacity = '0.5'; }
 
             const r=await fetchGAS({action:'admin_get_table', table:'tb_profil', page: page, limit: 10, search: searchValue}); 
             
             if(r.status==='success'){ 
                 const rw=r.data.map((p,i)=>`<tr><td>${((r.pagination.currentPage-1)*r.pagination.itemsPerPage) + (i+1)}</td><td><img src="${getImgUrl(p.Foto_Profil)}" class="rounded-circle me-2" width="40"><b>${p.Nama}</b><br>${p.NIP||p.NIK}</td><td>${p.Jabatan_Terakhir||'-'}</td><td><span class="badge bg-${p.Status_Verifikasi==='VERIFIED'?'success':'warning'}">${p.Status_Verifikasi}</span></td><td><button onclick="showDetailUser('${p.NIK}')" class="btn btn-sm btn-info text-white me-1"><i class="fas fa-eye"></i></button> <button onclick="showFullEditUser('${p.NIK}')" class="btn btn-sm btn-warning text-dark"><i class="fas fa-pencil-alt"></i></button></td></tr>`).join(''); 
                 
-                // Pagination Controls
                 const totalP = r.pagination.totalPages;
                 const currP = r.pagination.currentPage;
                 let pagHTML = `<nav><ul class="pagination justify-content-center mt-3">`;
-                
-                // Prev
                 pagHTML += `<li class="page-item ${currP === 1 ? 'disabled' : ''}"><button class="page-link" onclick="loadAM(${currP - 1})">Prev</button></li>`;
-                
-                // Info Text
                 pagHTML += `<li class="page-item disabled"><span class="page-link text-dark border-0">Hal ${currP} dari ${totalP} (Total: ${r.pagination.totalItems})</span></li>`;
-                
-                // Next
                 pagHTML += `<li class="page-item ${currP === totalP ? 'disabled' : ''}"><button class="page-link" onclick="loadAM(${currP + 1})">Next</button></li>`;
                 pagHTML += `</ul></nav>`;
 
@@ -885,17 +945,13 @@
         
         function searchMasterDebounce(el) {
             clearTimeout(adminSearchTimer);
-            adminSearchTimer = setTimeout(() => {
-                loadAM(1); // Reset to page 1 on search
-            }, 600); // 600ms delay
+            adminSearchTimer = setTimeout(() => { loadAM(1); }, 600);
         }
 
         // [NEW] LOAD ADMIN USERS (MANAJEMEN USER)
         async function loadAU(page = 1) {
             const c=document.getElementById('ac');
             c.innerHTML='<div class="spinner-border text-primary"></div>';
-            
-            // Reusing admin_get_table for tb_users
             const r=await fetchGAS({action:'admin_get_table', table:'tb_users', page: page, limit: 10});
 
             if(r.status==='success'){
@@ -914,7 +970,6 @@
                     </tr>
                 `).join('');
                 
-                // Pagination
                 const totalP = r.pagination.totalPages;
                 const currP = r.pagination.currentPage;
                 let pagHTML = `<nav><ul class="pagination justify-content-center mt-3">`;
@@ -980,7 +1035,6 @@
             }
         }
         
-        // [NEW] FUNCTION SHOW FULL DETAIL USER
         async function showDetailUser(targetNik) {
             Swal.fire({title:'Memuat...',didOpen:()=>{Swal.showLoading()}});
             const r = await fetchGAS({action:'get_data',nik:targetNik});
@@ -997,7 +1051,6 @@
             Swal.fire({html:html,width:'800px',showCloseButton:true,showConfirmButton:false});
         }
 
-        // [NEW] ADMIN FULL EDIT (Added Kartu Section)
         async function showFullEditUser(targetNik) {
             Swal.fire({title:'Memuat...',didOpen:()=>{Swal.showLoading()}});
             const r = await fetchGAS({action:'get_data',nik:targetNik});
@@ -1044,7 +1097,7 @@
                 else if(t==='tb_jabatan') vals={Nama_Jabatan:document.getElementById('a-1').value, Unit_Kerja:document.getElementById('a-2').value, TMT:document.getElementById('a-3').value}; 
                 else if(t==='tb_keluarga') vals={Nama:document.getElementById('a-1').value, Hubungan:document.getElementById('a-2').value}; 
                 else if(t==='tb_kartu') {
-                    let fileUrl = ''; const fileInput = document.getElementById('a-f'); // Note: Basic admin add doesn't have file input in this simplified version, would need to add it to 'h' variable above if needed
+                    let fileUrl = ''; const fileInput = document.getElementById('a-f'); 
                     vals={Jenis_Kartu:document.getElementById('a-1').value, No_Kartu:document.getElementById('a-2').value, Link_File:fileUrl};
                 }
                 await saveData(t, vals, null, nik); showFullEditUser(nik); 
