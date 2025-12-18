@@ -644,6 +644,7 @@
                             <div class="absensi-info">
                                 <div><small class="text-muted">Koordinat:</small></div>
                                 <div class="fw-bold" id="live-location">Mencari lokasi...</div>
+                                <button onclick="refreshLocation()" class="btn btn-sm btn-outline-primary mt-2 w-100"><i class="fas fa-sync-alt"></i> Refresh Lokasi</button>
                             </div>
                             <div class="mt-auto pt-3 d-grid gap-2">
                                 <button id="btn-in" onclick="submitAbsensi('IN')" class="btn btn-success btn-lg" disabled><i class="fas fa-sign-in-alt"></i> Absen Masuk</button>
@@ -669,22 +670,8 @@
                 document.getElementById('live-clock').innerText = now.toLocaleTimeString('id-ID');
             }, 1000);
 
-            // Get Location
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                        document.getElementById('live-location').innerText = `${userLocation.lat.toFixed(5)}, ${userLocation.lng.toFixed(5)}`;
-                        checkDistance(userLocation);
-                    },
-                    (err) => {
-                        document.getElementById('live-location').innerHTML = `<span class="text-danger">Gagal: ${err.message}</span>`;
-                        Swal.fire('Error GPS', 'Aktifkan GPS untuk absen', 'error');
-                    }
-                );
-            } else {
-                document.getElementById('live-location').innerText = "GPS tidak didukung browser ini.";
-            }
+            // Get Location (Initial)
+            refreshLocation();
 
             // Load History & Status
             const r = await fetchGAS({action: 'get_today_absensi', nik: currentUser.nik});
@@ -732,6 +719,28 @@
                 btn.style.display = 'none';
             } catch (err) {
                 Swal.fire('Kamera Error', 'Izinkan akses kamera di browser', 'error');
+            }
+        }
+
+        function refreshLocation() {
+            const locEl = document.getElementById('live-location');
+            if(!locEl) return;
+            locEl.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Mencari...';
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        locEl.innerText = `${userLocation.lat.toFixed(5)}, ${userLocation.lng.toFixed(5)}`;
+                        checkDistance(userLocation);
+                    },
+                    (err) => {
+                        locEl.innerHTML = `<span class="text-danger">Gagal: ${err.message}</span>`;
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            } else {
+                locEl.innerText = "GPS tidak didukung.";
             }
         }
 
@@ -1097,7 +1106,7 @@
                 else if(t==='tb_jabatan') vals={Nama_Jabatan:document.getElementById('a-1').value, Unit_Kerja:document.getElementById('a-2').value, TMT:document.getElementById('a-3').value}; 
                 else if(t==='tb_keluarga') vals={Nama:document.getElementById('a-1').value, Hubungan:document.getElementById('a-2').value}; 
                 else if(t==='tb_kartu') {
-                    let fileUrl = ''; const fileInput = document.getElementById('a-f'); 
+                    let fileUrl = ''; const fileInput = document.getElementById('a-f'); // Note: Basic admin add doesn't have file input in this simplified version, would need to add it to 'h' variable above if needed
                     vals={Jenis_Kartu:document.getElementById('a-1').value, No_Kartu:document.getElementById('a-2').value, Link_File:fileUrl};
                 }
                 await saveData(t, vals, null, nik); showFullEditUser(nik); 
