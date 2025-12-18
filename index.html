@@ -851,10 +851,19 @@
             const canvas = document.getElementById('camera-canvas');
             const context = canvas.getContext('2d');
             
-            // 1. Capture Image
-            canvas.width = 320; 
-            canvas.height = 240;
-            context.drawImage(video, 0, 0, 320, 240);
+            // --- PERBAIKAN ASPEK RASIO ---
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+            const targetWidth = 320; 
+            const aspectRatio = videoWidth / videoHeight;
+            const targetHeight = targetWidth / aspectRatio;
+            
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            
+            // Gambar video ke canvas (tanpa mirror agar teks terbaca benar)
+            context.drawImage(video, 0, 0, targetWidth, targetHeight);
+            
             const imageBase64 = canvas.toDataURL('image/jpeg', 0.7); 
 
             // 2. [PERBAIKAN] STOP CAMERA IMMEDIATELY
